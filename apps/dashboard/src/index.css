@@ -1,0 +1,59 @@
+:root {
+  --bg-base:      #080c10;
+  --bg-surface:   #0e1420;
+  --bg-elevated:  #161e2e;
+  --border:       #1e2d42;
+  --accent:       #00d4ff;
+  --accent-dim:   rgba(0, 212, 255, 0.10);
+  --accent-gold:  #f0b429;
+  --text-primary: #e8f0fe;
+  --text-muted:   #6b7fa3;
+  --text-faint:   #3a4a64;
+  --danger:       #ff4d6d;
+  --success:      #00c48c;
+  --font-display: "Bebas Neue", sans-serif;
+  --font-body:    "IBM Plex Sans", sans-serif;
+  --font-mono:    "IBM Plex Mono", monospace;
+  --radius:       6px;
+  --radius-lg:    12px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+a { color: var(--accent); text-decoration: none; }
+button { cursor: pointer; font-family: var(--font-body); }
+
+.fade-in {
+  animation: fadeIn 0.3s ease both;
+}
