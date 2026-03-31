@@ -1,3 +1,6 @@
+// ─── Singleton instances ──────────────────────────────────────────────────────
+import { MockDataLakeClient, MockModelClient } from "./mockClient";
+
 import type {
   Player,
   TeamStats,
@@ -5,8 +8,8 @@ import type {
   PredictionResult,
   NullClawMessage,
   NullClawResponse,
+  
 } from "@nfl/types";
-
 // ─── Base fetcher ─────────────────────────────────────────────────────────────
 async function apiFetch<T>(baseUrl: string, path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${baseUrl}${path}`, {
@@ -75,5 +78,17 @@ export class ModelClient {
 }
 
 // ─── Singleton instances ──────────────────────────────────────────────────────
-export const dataLake = new DataLakeClient();
-export const modelApi = new ModelClient();
+// export const dataLake = new DataLakeClient();
+// export const modelApi = new ModelClient();
+
+
+
+const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
+
+export const dataLake: DataLakeClient | MockDataLakeClient = isDemoMode
+  ? new MockDataLakeClient()
+  : new DataLakeClient(import.meta.env.VITE_DATA_LAKE_URL ?? "http://localhost:8000");
+
+export const modelApi: ModelClient | MockModelClient = isDemoMode
+  ? new MockModelClient()
+  : new ModelClient(import.meta.env.VITE_MODEL_API_URL ?? "http://localhost:8001");

@@ -1,41 +1,55 @@
 import { useState, useEffect } from "react";
+import { dataLake, modelApi } from "@nfl/api-client";
 
-interface HealthState {
-  dataLakeOk: boolean | null;
-  modelsOk: boolean | null;
+export type HealthStatus = "online" | "offline" | "demo";
+
+interface ApiHealth {
+  dataLakeStatus: HealthStatus;
+  modelsStatus: HealthStatus;
+  dataLakeOk: boolean;
+  modelsOk: boolean;
+  isDemoMode: boolean;
 }
 
-async function ping(url: string): Promise<boolean> {
-  try {
-    const res = await fetch(`${url}/health`, { signal: AbortSignal.timeout(3000) });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
+const DEMO_MODE = import.meta.env.VITE_DEMO_MODE === "true";
+const POLL_INTERVAL = 15_000;
 
-export function useApiHealth(intervalMs = 15_000): HealthState {
-  const [state, setState] = useState<HealthState>({
-    dataLakeOk: null,
-    modelsOk: null,
-  });
+export function useApiHealth(): ApiHealth {
+  const [dataLakeStatus, setDataLakeStatus] = useState<HealthStatus>(
+    DEMO_MODE ? "demo" : "offline"
+  );
+  const [modelsStatus, setModelsStatus] = useState<HealthStatus>(
+    DEMO_MODE ? "demo" : "offline"
+  );
 
   useEffect(() => {
-    const dataLakeUrl = import.meta.env.VITE_DATA_LAKE_URL ?? "http://localhost:8000";
-    const modelsUrl   = import.meta.env.VITE_MODEL_API_URL  ?? "http://localhost:8001";
+    if (DEMO_MODE) return;
 
-    const check = async () => {
-      const [dataLakeOk, modelsOk] = await Promise.all([
-        ping(dataLakeUrl),
-        ping(modelsUrl),
-      ]);
-      setState({ dataLakeOk, modelsOk });
-    };
+    async function check() {
+      try {
+        await dataLake.health();
+        setDataLakeStatus("online");
+      } catch {
+        setDataLakeStatus("offline");
+      }
+      try {
+        await modelApi.health();
+        setModelsStatus("online");
+      } catch {
+        setModelsStatus("offline");
+      }
+    }
 
     check();
-    const id = setInterval(check, intervalMs);
+    const id = setInterval(check, POLL_INTERVAL);
     return () => clearInterval(id);
-  }, [intervalMs]);
+  }, []);
 
-  return state;
+  return {
+    dataLakeStatus,
+    modelsStatus,
+    dataLakeOk: dataLakeStatus === "online" || dataLakeStatus === "demo",
+    modelsOk: modelsStatus === "online" || modelsStatus === "demo",
+    isDemoMode: DEMO_MODE,
+  };
 }

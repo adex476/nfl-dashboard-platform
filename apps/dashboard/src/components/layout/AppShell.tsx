@@ -22,6 +22,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <span className={styles.logoSub}>SCOUT</span>
         </div>
 
+        <DemoModeBanner />
+
         <nav className={styles.nav}>
           {NAV.map(({ to, label, icon }) => (
             <NavLink
@@ -51,15 +53,41 @@ export default function AppShell({ children }: { children: ReactNode }) {
   );
 }
 
-function StatusRow({
-  label,
-  port,
-  ok,
-}: {
-  label: string;
-  port: number;
-  ok: boolean | null;
-}) {
+function DemoModeBanner() {
+  const { isDemoMode } = useApiHealth();
+  if (!isDemoMode) return null;
+
+  return (
+    <div style={{
+      margin: "12px 0",
+      padding: "10px 14px",
+      background: "rgba(240, 180, 41, 0.12)",
+      border: "1px solid var(--accent-gold)",
+      borderRadius: "var(--radius)",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+    }}>
+      <span style={{ fontSize: "16px" }}>⚡</span>
+      <div>
+        <div style={{
+          fontSize: "11px",
+          fontWeight: 700,
+          letterSpacing: "1px",
+          color: "var(--accent-gold)",
+          textTransform: "uppercase",
+        }}>
+          Demo Mode
+        </div>
+        <div style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "2px" }}>
+          Showing sample data — live API pending
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusRow({ label, port, ok }: { label: string; port: number; ok: boolean | null }) {
   const color =
     ok === null ? "var(--text-faint)" :
     ok          ? "var(--success)"    :

@@ -71,3 +71,5 @@ export interface ApiResponse<T> {
   status: "ok" | "error";
   message?: string;
 }
+
+export * from "./mockData"
