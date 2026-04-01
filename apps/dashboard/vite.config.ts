@@ -26,6 +26,12 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (p) => p.replace(/^\/api\/models/, ""),
       },
+      // In dev, /api/nanoclaw/... → http://localhost:8002/...
+      "/api/nanoclaw": {
+        target: "http://localhost:8002",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api\/nanoclaw/, ""),
+      },
     },
   },
 });

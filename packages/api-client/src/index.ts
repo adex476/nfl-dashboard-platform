@@ -1,6 +1,3 @@
-// ─── Singleton instances ──────────────────────────────────────────────────────
-import { MockDataLakeClient, MockModelClient } from "./mockClient";
-
 import type {
   Player,
   TeamStats,
@@ -8,9 +5,8 @@ import type {
   PredictionResult,
   NullClawMessage,
   NullClawResponse,
-  
 } from "@nfl/types";
-// ─── Base fetcher ─────────────────────────────────────────────────────────────
+
 async function apiFetch<T>(baseUrl: string, path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${baseUrl}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -20,9 +16,9 @@ async function apiFetch<T>(baseUrl: string, path: string, init?: RequestInit): P
   return res.json() as Promise<T>;
 }
 
-// ─── Data Lake client (port 8000) ─────────────────────────────────────────────
+// ─── Data Lake client ─────────────────────────────────────────────────────────
 export class DataLakeClient {
-  constructor(private base = "http://localhost:8000") {}
+  constructor(private base = "https://claw-hub.tailca9d37.ts.net") {}
 
   query(sql: string): Promise<Record<string, unknown>[]> {
     return apiFetch(this.base, "/query", {
@@ -54,19 +50,28 @@ export class DataLakeClient {
   }
 }
 
-// ─── Model Platform client (port 8001) ───────────────────────────────────────
+// ─── Model Platform client ────────────────────────────────────────────────────
 export class ModelClient {
-  constructor(private base = "http://localhost:8001") {}
+  constructor(private base = "https://claw-hub.tailca9d37.ts.net/models") {}
 
   predict(req: PredictionRequest): Promise<PredictionResult> {
-    return apiFetch(this.base, `/predict/${req.model}`, {
+    return apiFetch(this.base, `/${req.model}/predict`, {
       method: "POST",
       body: JSON.stringify(req.inputs),
     });
   }
 
-  nullclaw(messages: NullClawMessage[]): Promise<NullClawResponse> {
-    return apiFetch(this.base, "/nullclaw/chat", {
+  health(): Promise<{ status: string }> {
+    return apiFetch(this.base, "/health");
+  }
+}
+
+// ─── NanoClaw client ──────────────────────────────────────────────────────────
+export class NanoClawClient {
+  constructor(private base = "https://claw-hub.tailca9d37.ts.net/nanoclaw") {}
+
+  chat(messages: NullClawMessage[]): Promise<NullClawResponse> {
+    return apiFetch(this.base, "/chat", {
       method: "POST",
       body: JSON.stringify({ messages }),
     });
@@ -78,17 +83,13 @@ export class ModelClient {
 }
 
 // ─── Singleton instances ──────────────────────────────────────────────────────
-// export const dataLake = new DataLakeClient();
-// export const modelApi = new ModelClient();
+export const dataLake = new DataLakeClient(
+  import.meta.env.VITE_DATA_LAKE_URL ?? "https://claw-hub.tailca9d37.ts.net"
+);
+export const modelApi = new ModelClient(
+  import.meta.env.VITE_MODEL_API_URL ?? "https://claw-hub.tailca9d37.ts.net/models"
+);
+export const nanoClawApi = new NanoClawClient(
+  import.meta.env.VITE_NANOCLAW_URL ?? "https://claw-hub.tailca9d37.ts.net/nanoclaw"
+);
 
-
-
-const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
-
-export const dataLake: DataLakeClient | MockDataLakeClient = isDemoMode
-  ? new MockDataLakeClient()
-  : new DataLakeClient(import.meta.env.VITE_DATA_LAKE_URL ?? "http://localhost:8000");
-
-export const modelApi: ModelClient | MockModelClient = isDemoMode
-  ? new MockModelClient()
-  : new ModelClient(import.meta.env.VITE_MODEL_API_URL ?? "http://localhost:8001");
