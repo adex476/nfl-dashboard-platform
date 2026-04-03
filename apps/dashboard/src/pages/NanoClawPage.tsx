@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import type { NullClawMessage } from "@nfl/types";
+import type { NanoClawMessage } from "@nfl/types";
 import { nanoClawApi } from "@nfl/api-client"; // ← was: modelApi
 
 const SUGGESTIONS = [
@@ -9,8 +9,8 @@ const SUGGESTIONS = [
   "Compare two QBs from the 2025 class",
 ];
 
-export default function NullClawPage() {
-  const [messages, setMessages]   = useState<NullClawMessage[]>([]);
+export default function NanoClawPage() {
+  const [messages, setMessages]   = useState<NanoClawMessage[]>([]);
   const [input, setInput]         = useState("");
   const [loading, setLoading]     = useState(false);
   const bottomRef                 = useRef<HTMLDivElement>(null);
@@ -21,7 +21,7 @@ export default function NullClawPage() {
 
   const send = async (text: string) => {
     if (!text.trim() || loading) return;
-    const userMsg: NullClawMessage = { role: "user", content: text.trim() };
+    const userMsg: NanoClawMessage = { role: "user", content: text.trim() };
     const next = [...messages, userMsg];
     setMessages(next);
     setInput("");
@@ -33,7 +33,7 @@ export default function NullClawPage() {
     } catch (e) {
       setMessages([...next, {
         role: "assistant",
-        content: `⚠ Could not reach NanoClaw: ${String(e)}\n\nMake sure NanoClaw is running on :8002`, // ← updated
+        content: `⚠ Could not reach NanoClaw: ${String(e)}`,
       }]);
     } finally {
       setLoading(false);
@@ -48,7 +48,7 @@ export default function NullClawPage() {
           NULL<span style={{ color: "var(--accent)" }}>CLAW</span>
         </h1>
         <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
-          AI draft analyst · powered by NanoClaw on :8002
+          AI draft analyst · powered by NanoClaw
         </p>
       </div>
 

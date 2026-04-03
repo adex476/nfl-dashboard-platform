@@ -34,7 +34,6 @@ export type ModelName =
   | "player_projection"
   | "draft_optimizer"
   | "team_diagnosis"
-  | "career_simulator"
   | "roster_fit"
   | "positional_flexibility"
   | "health_analyzer";
@@ -52,12 +51,12 @@ export interface PredictionResult {
   metadata?: Record<string, unknown>;
 }
 
-export interface NullClawMessage {
+export interface NanoClawMessage {
   role: "user" | "assistant";
   content: string;
 }
 
-export interface NullClawResponse {
+export interface NanoClawResponse {
   reply: string;
   tool_calls?: Array<{
     model: ModelName;

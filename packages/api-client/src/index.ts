@@ -3,8 +3,8 @@ import type {
   TeamStats,
   PredictionRequest,
   PredictionResult,
-  NullClawMessage,
-  NullClawResponse,
+  NanoClawMessage,
+  NanoClawResponse,
 } from "@nfl/types";
 
 async function apiFetch<T>(baseUrl: string, path: string, init?: RequestInit): Promise<T> {
@@ -18,7 +18,7 @@ async function apiFetch<T>(baseUrl: string, path: string, init?: RequestInit): P
 
 // ─── Data Lake client ─────────────────────────────────────────────────────────
 export class DataLakeClient {
-  constructor(private base = "https://claw-hub.tailca9d37.ts.net") {}
+  constructor(private base = "https://nfl-dashboard.duckdns.org") {}
 
   query(sql: string): Promise<Record<string, unknown>[]> {
     return apiFetch(this.base, "/query", {
@@ -34,8 +34,48 @@ export class DataLakeClient {
     return apiFetch(this.base, `/players?${params}`);
   }
 
+  searchPlayers(q: string): Promise<Player[]> {
+    return apiFetch(this.base, `/players/search?q=${encodeURIComponent(q)}`);
+  }
+
   player(name: string): Promise<Player> {
     return apiFetch(this.base, `/players/${encodeURIComponent(name)}`);
+  }
+
+  playerProfile(id: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/players/id/${encodeURIComponent(id)}/profile`);
+  }
+
+  playerAthletic(id: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/players/id/${encodeURIComponent(id)}/athletic`);
+  }
+
+  playerProduction(id: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/players/id/${encodeURIComponent(id)}/production`);
+  }
+
+  playerDurability(id: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/players/id/${encodeURIComponent(id)}/durability`);
+  }
+
+  playerDraftValue(id: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/players/id/${encodeURIComponent(id)}/draft-value`);
+  }
+
+  leaderboardAthletic(): Promise<Player[]> {
+    return apiFetch(this.base, "/players/leaderboard/athletic");
+  }
+
+  leaderboardProduction(): Promise<Player[]> {
+    return apiFetch(this.base, "/players/leaderboard/production");
+  }
+
+  leaderboardDraftValue(): Promise<Player[]> {
+    return apiFetch(this.base, "/players/leaderboard/draft-value");
+  }
+
+  teams(): Promise<{ abbr: string; name: string }[]> {
+    return apiFetch(this.base, "/teams");
   }
 
   teamStats(team: string, yearStart?: number, yearEnd?: number): Promise<TeamStats[]> {
@@ -51,14 +91,27 @@ export class DataLakeClient {
 }
 
 // ─── Model Platform client ────────────────────────────────────────────────────
+// ModelName uses underscores (player_projection) but API paths use hyphens (player-projection)
+function toApiPath(model: string): string {
+  return model.replace(/_/g, "-");
+}
+
 export class ModelClient {
-  constructor(private base = "https://claw-hub.tailca9d37.ts.net/models") {}
+  constructor(private base = "https://nfl-dashboard.duckdns.org/api/models") {}
 
   predict(req: PredictionRequest): Promise<PredictionResult> {
-    return apiFetch(this.base, `/${req.model}/predict`, {
+    return apiFetch(this.base, `/${toApiPath(req.model)}/predict`, {
       method: "POST",
       body: JSON.stringify(req.inputs),
     });
+  }
+
+  schema(model: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/${toApiPath(model)}/schema`);
+  }
+
+  modelsHealth(): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, "/health/models");
   }
 
   health(): Promise<{ status: string }> {
@@ -68,13 +121,21 @@ export class ModelClient {
 
 // ─── NanoClaw client ──────────────────────────────────────────────────────────
 export class NanoClawClient {
-  constructor(private base = "https://claw-hub.tailca9d37.ts.net/nanoclaw") {}
+  constructor(private base = "https://nfl-dashboard.duckdns.org/api/nanoclaw") {}
 
-  chat(messages: NullClawMessage[]): Promise<NullClawResponse> {
+  chat(messages: NanoClawMessage[]): Promise<NanoClawResponse> {
     return apiFetch(this.base, "/chat", {
       method: "POST",
       body: JSON.stringify({ messages }),
     });
+  }
+
+  tools(): Promise<Record<string, unknown>[]> {
+    return apiFetch(this.base, "/tools");
+  }
+
+  chatHistory(sessionId: string): Promise<NanoClawMessage[]> {
+    return apiFetch(this.base, `/chat/history/${encodeURIComponent(sessionId)}`);
   }
 
   health(): Promise<{ status: string }> {
@@ -83,13 +144,15 @@ export class NanoClawClient {
 }
 
 // ─── Singleton instances ──────────────────────────────────────────────────────
+// Defaults use relative paths so the Vite proxy handles dev routing and
+// same-origin requests work in production without CORS issues.
 export const dataLake = new DataLakeClient(
-  import.meta.env.VITE_DATA_LAKE_URL ?? "https://claw-hub.tailca9d37.ts.net"
+  import.meta.env.VITE_DATA_LAKE_URL || ""
 );
 export const modelApi = new ModelClient(
-  import.meta.env.VITE_MODEL_API_URL ?? "https://claw-hub.tailca9d37.ts.net/models"
+  import.meta.env.VITE_MODEL_API_URL || "/api/models"
 );
 export const nanoClawApi = new NanoClawClient(
-  import.meta.env.VITE_NANOCLAW_URL ?? "https://claw-hub.tailca9d37.ts.net/nanoclaw"
+  import.meta.env.VITE_NANOCLAW_URL || "/api/nanoclaw"
 );
 

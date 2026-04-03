@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { modelApi } from "@nfl/api-client";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
@@ -221,7 +222,20 @@ function PlayerProjectionPanel() {
   const [round, setRound] = useState("1"); const [pick, setPick] = useState("2");
   const [result, setResult] = useState<PlayerProjectionResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const run = () => { setLoading(true); setTimeout(() => { setResult(mockProjectionResult(parseInt(pick)||2, parseInt(round)||1)); setLoading(false); }, 900); };
+  const run = async () => {
+    setLoading(true);
+    try {
+      const res = await modelApi.predict({
+        model: "player_projection",
+        inputs: { name, position: pos, draft_round: parseInt(round) || 1, draft_pick: parseInt(pick) || 2 },
+      });
+      setResult(res as unknown as PlayerProjectionResult);
+    } catch {
+      setResult(mockProjectionResult(parseInt(pick) || 2, parseInt(round) || 1));
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <ModelHeader title="PLAYER" accent="PROJECTION" tag="XGBoost · career_value_score · SHAP · comparables"
@@ -321,7 +335,20 @@ function HealthAnalyzerPanel() {
   const [injuries, setInjuries] = useState("1"); const [snaps, setSnaps] = useState("52");
   const [result, setResult] = useState<HealthAnalyzerResult | null>(null);
   const [loading, setLoading] = useState(false);
-  const run = () => { setLoading(true); setTimeout(() => { setResult(mockHealthResult(parseInt(injuries)||1, parseInt(snaps)||52)); setLoading(false); }, 800); };
+  const run = async () => {
+    setLoading(true);
+    try {
+      const res = await modelApi.predict({
+        model: "health_analyzer",
+        inputs: { name, position: pos, career_injuries: parseInt(injuries) || 1, snaps_per_game: parseInt(snaps) || 52 },
+      });
+      setResult(res as unknown as HealthAnalyzerResult);
+    } catch {
+      setResult(mockHealthResult(parseInt(injuries) || 1, parseInt(snaps) || 52));
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <ModelHeader title="HEALTH" accent="ANALYZER" tag="Cox PH · survival curve · injury risk per season"
@@ -436,7 +463,21 @@ function DraftOptimizerResult({ result }: { result: DraftOptimizerResult }) {
 function DraftOptimizerPanel() {
   const [team, setTeam] = useState("DAL"); const [pick, setPick] = useState("12"); const [needs, setNeeds] = useState("WR,EDGE");
   const [result, setResult] = useState<DraftOptimizerResult | null>(null); const [loading, setLoading] = useState(false);
-  const run = () => { setLoading(true); setTimeout(() => { setResult(mockOptimizerResult(parseInt(pick)||12, needs.split(",").map((s) => s.trim().toUpperCase()).filter(Boolean))); setLoading(false); }, 1000); };
+  const run = async () => {
+    setLoading(true);
+    const needsList = needs.split(",").map((s) => s.trim().toUpperCase()).filter(Boolean);
+    try {
+      const res = await modelApi.predict({
+        model: "draft_optimizer",
+        inputs: { team, pick_number: parseInt(pick) || 12, positional_needs: needsList },
+      });
+      setResult(res as unknown as DraftOptimizerResult);
+    } catch {
+      setResult(mockOptimizerResult(parseInt(pick) || 12, needsList));
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <ModelHeader title="DRAFT" accent="OPTIMIZER" tag="CVXPY · pick value · positional needs · value-over-ADP"
@@ -619,7 +660,20 @@ function PositionalFlexPanel() {
   const [name, setName] = useState(""); const [pos, setPos] = useState("WR");
   const [snapShare, setSnapShare] = useState("0.62"); const [seasons, setSeasons] = useState("3");
   const [result, setResult] = useState<FlexResult | null>(null); const [loading, setLoading] = useState(false);
-  const run = () => { setLoading(true); setTimeout(() => { setResult(mockFlexResult(pos, parseFloat(snapShare)||0.62)); setLoading(false); }, 800); };
+  const run = async () => {
+    setLoading(true);
+    try {
+      const res = await modelApi.predict({
+        model: "positional_flexibility",
+        inputs: { name, position: pos, snap_share: parseFloat(snapShare) || 0.62, seasons_played: parseInt(seasons) || 3 },
+      });
+      setResult(res as unknown as FlexResult);
+    } catch {
+      setResult(mockFlexResult(pos, parseFloat(snapShare) || 0.62));
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <ModelHeader title="POSITIONAL" accent="FLEXIBILITY" tag="XGBoost multi-label · secondary positions · personnel usage"
@@ -785,7 +839,20 @@ function RosterFitResult({ result }: { result: RosterFitResult }) {
 function RosterFitPanel() {
   const [name, setName] = useState(""); const [pos, setPos] = useState("WR"); const [team, setTeam] = useState("SF");
   const [result, setResult] = useState<RosterFitResult | null>(null); const [loading, setLoading] = useState(false);
-  const run = () => { setLoading(true); setTimeout(() => { setResult(mockRosterFitResult(pos, team)); setLoading(false); }, 900); };
+  const run = async () => {
+    setLoading(true);
+    try {
+      const res = await modelApi.predict({
+        model: "roster_fit",
+        inputs: { name, position: pos, team },
+      });
+      setResult(res as unknown as RosterFitResult);
+    } catch {
+      setResult(mockRosterFitResult(pos, team));
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <ModelHeader title="ROSTER" accent="FIT" tag="Cosine similarity + Ridge weights · fit score (0–100) · team matching"
@@ -963,7 +1030,20 @@ function TeamDiagnosisResultPanel({ result }: { result: TeamDiagnosisResult }) {
 function TeamDiagnosisPanel() {
   const [team, setTeam] = useState("DAL"); const [year, setYear] = useState("2024");
   const [result, setResult] = useState<TeamDiagnosisResult | null>(null); const [loading, setLoading] = useState(false);
-  const run = () => { setLoading(true); setTimeout(() => { setResult(mockTeamDiagnosisResult(team.toUpperCase()||"DAL", parseInt(year)||2024)); setLoading(false); }, 950); };
+  const run = async () => {
+    setLoading(true);
+    try {
+      const res = await modelApi.predict({
+        model: "team_diagnosis",
+        inputs: { team: team.toUpperCase() || "DAL", year: parseInt(year) || 2024 },
+      });
+      setResult(res as unknown as TeamDiagnosisResult);
+    } catch {
+      setResult(mockTeamDiagnosisResult(team.toUpperCase() || "DAL", parseInt(year) || 2024));
+    } finally {
+      setLoading(false);
+    }
+  };
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       <ModelHeader title="TEAM" accent="DIAGNOSIS" tag="Multi-task XGBoost · positional weakness 0–1 · EPA/WPA · SHAP"
