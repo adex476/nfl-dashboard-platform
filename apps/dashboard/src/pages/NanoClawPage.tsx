@@ -14,6 +14,7 @@ export default function NanoClawPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const sessionId = useRef(crypto.randomUUID());
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -28,7 +29,7 @@ export default function NanoClawPage() {
     setLoading(true);
 
     try {
-      const res = await nanoClawApi.chat(next); // ← was: modelApi.nullclaw(next)
+      const res = await nanoClawApi.chat(next, sessionId.current);
       setMessages([...next, { role: "assistant", content: res.reply }]);
     } catch (e) {
       setMessages([

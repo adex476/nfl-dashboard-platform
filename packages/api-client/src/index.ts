@@ -145,10 +145,10 @@ export class NanoClawClient {
     private base = "https://nfl-dashboard.duckdns.org/api/nanoclaw",
   ) {}
 
-  chat(messages: NanoClawMessage[]): Promise<NanoClawResponse> {
+  chat(messages: NanoClawMessage[], sessionId: string): Promise<NanoClawResponse> {
     return apiFetch(this.base, "/chat", {
       method: "POST",
-      body: JSON.stringify({ messages }),
+      body: JSON.stringify({ messages, session_id: sessionId }),
     });
   }
 
