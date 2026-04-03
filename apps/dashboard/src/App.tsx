@@ -3,7 +3,7 @@ import AppShell from "./components/layout/AppShell";
 import OverviewPage  from "./pages/OverviewPage";
 import PlayersPage   from "./pages/PlayersPage";
 import ModelsPage    from "./pages/ModelsPage";
-import NullClawPage  from "./pages/NullClawPage";
+import NanoClawPage  from "./pages/NanoClawPage";
 import QueryPage     from "./pages/QueryPage";
 
 export default function App() {
@@ -14,7 +14,7 @@ export default function App() {
         <Route path="/overview"  element={<OverviewPage />} />
         <Route path="/players"   element={<PlayersPage />} />
         <Route path="/models"    element={<ModelsPage />} />
-        <Route path="/nullclaw"  element={<NullClawPage />} />
+        <Route path="/nanoclaw"  element={<NanoClawPage />} />
         <Route path="/query"     element={<QueryPage />} />
       </Routes>
     </AppShell>

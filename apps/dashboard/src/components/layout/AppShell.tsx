@@ -7,12 +7,12 @@ const NAV = [
   { to: "/overview", label: "Overview",  icon: "◈" },
   { to: "/players",  label: "Players",   icon: "◉" },
   { to: "/models",   label: "Models",    icon: "◆" },
-  { to: "/nullclaw", label: "NullClaw",  icon: "✦" },
+  { to: "/nanoclaw", label: "NanoClaw",  icon: "✦" },
   { to: "/query",    label: "SQL Query", icon: "⌘" },
 ];
 
 export default function AppShell({ children }: { children: ReactNode }) {
-  const { dataLakeOk, modelsOk } = useApiHealth();
+  const { dataLakeOk, modelsOk, nanoClawOk } = useApiHealth();
 
   return (
     <div className={styles.shell}>
@@ -43,6 +43,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           <p className={styles.footerLabel}>Services</p>
           <StatusRow label="Data Lake" port={8000} ok={dataLakeOk} />
           <StatusRow label="Models"    port={8001} ok={modelsOk} />
+          <StatusRow label="NanoClaw"  port={8002} ok={nanoClawOk} />
         </div>
       </aside>
 

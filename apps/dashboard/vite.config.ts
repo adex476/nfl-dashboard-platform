@@ -14,18 +14,16 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      // In dev, /api/data-lake/... → http://localhost:8000/...
-      "/api/data-lake": {
-        target: "http://localhost:8000",
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api\/data-lake/, ""),
-      },
-      // In dev, /api/models/... → http://localhost:8001/...
-      "/api/models": {
-        target: "http://localhost:8001",
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api\/models/, ""),
-      },
+      // Data lake — root-level paths forwarded to production server
+      "/health":  { target: "https://nfl-dashboard.duckdns.org", changeOrigin: true, secure: true },
+      "/players": { target: "https://nfl-dashboard.duckdns.org", changeOrigin: true, secure: true },
+      "/teams":   { target: "https://nfl-dashboard.duckdns.org", changeOrigin: true, secure: true },
+      "/query":   { target: "https://nfl-dashboard.duckdns.org", changeOrigin: true, secure: true },
+      "/graph":   { target: "https://nfl-dashboard.duckdns.org", changeOrigin: true, secure: true },
+      "/manage":  { target: "https://nfl-dashboard.duckdns.org", changeOrigin: true, secure: true },
+      // Model platform + NanoClaw
+      "/api/models":   { target: "https://nfl-dashboard.duckdns.org", changeOrigin: true, secure: true },
+      "/api/nanoclaw": { target: "https://nfl-dashboard.duckdns.org", changeOrigin: true, secure: true },
     },
   },
 });

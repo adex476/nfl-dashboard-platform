@@ -2,7 +2,7 @@ import type {
   Player,
   TeamStats,
   PredictionResult,
-  NullClawResponse,
+  NanoClawResponse,
 } from "./index";
 
 // ─── Players ──────────────────────────────────────────────────────────────────
@@ -287,18 +287,6 @@ export const MOCK_PREDICTIONS: Record<string, PredictionResult> = {
       points_against:  0.15,
     },
   },
-  career_simulator: {
-    model: "career_simulator",
-    score: 81.5,
-    confidence: 0.79,
-    shap_values: {
-      forty:       0.29,
-      college_tier: 0.25,
-      vertical:    0.20,
-      wt:          0.16,
-      bench:       0.10,
-    },
-  },
   roster_fit: {
     model: "roster_fit",
     score: 79.2,
@@ -324,7 +312,7 @@ export const MOCK_PREDICTIONS: Record<string, PredictionResult> = {
   },
 };
 
-// ─── NullClaw canned responses ────────────────────────────────────────────────
+// ─── NanoClaw canned responses ────────────────────────────────────────────────
 export const MOCK_NULLCLAW_RESPONSES: NullClawResponse[] = [
   {
     reply:

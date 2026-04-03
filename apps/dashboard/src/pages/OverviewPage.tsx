@@ -4,14 +4,13 @@ const MODELS = [
   { name: "Player Projection",      key: "player_projection",      status: "ready" },
   { name: "Draft Optimizer",        key: "draft_optimizer",        status: "pending" },
   { name: "Team Diagnosis",         key: "team_diagnosis",         status: "pending" },
-  { name: "Career Simulator",       key: "career_simulator",       status: "pending" },
   { name: "Roster Fit",             key: "roster_fit",             status: "pending" },
   { name: "Positional Flexibility", key: "positional_flexibility", status: "pending" },
   { name: "Health Analyzer",        key: "health_analyzer",        status: "pending" },
 ];
 
 export default function OverviewPage() {
-  const { dataLakeOk, modelsOk } = useApiHealth();
+  const { dataLakeOk, modelsOk, nanoClawOk } = useApiHealth();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
@@ -27,7 +26,7 @@ export default function OverviewPage() {
           SCOUT <span style={{ color: "var(--accent)" }}>OVERVIEW</span>
         </h1>
         <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
-          NFL draft intelligence platform — data lake, ML models, NullClaw assistant
+          NFL draft intelligence platform — data lake, ML models, NanoClaw assistant
         </p>
       </div>
 
@@ -46,11 +45,10 @@ export default function OverviewPage() {
           ok={modelsOk}
         />
         <ServiceCard
-          label="NullClaw"
+          label="NanoClaw"
           description="Claude assistant · tool routing"
-          port={8001}
-          ok={modelsOk}
-          sub
+          port={8002}
+          ok={nanoClawOk}
         />
       </div>
 
@@ -87,7 +85,7 @@ export default function OverviewPage() {
           <FlowRow nodes={["Raw lake", "Staged (Parquet)", "Curated (Parquet)"]} indent />
           <FlowRow nodes={["Curated", "DuckDB SQL  ·  Neo4j Graph"]} indent />
           <FlowRow nodes={["DuckDB · Neo4j", "FastAPI :8000", "Dashboard :3000"]} indent />
-          <FlowRow nodes={["FastAPI :8000", "Model Platform :8001", "NullClaw"]} indent />
+          <FlowRow nodes={["FastAPI :8000", "Model Platform :8001", "NanoClaw"]} indent />
         </div>
       </section>
     </div>

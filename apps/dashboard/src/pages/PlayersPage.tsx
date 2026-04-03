@@ -234,7 +234,7 @@ function ErrorState({ message }: { message: string }) {
         {message}
       </p>
       <p style={{ marginTop: "8px", color: "var(--text-faint)" }}>
-        Make sure the data lake API is running on :8000
+        Make sure the data lake API is reachable at nfl-dashboard.duckdns.org
       </p>
     </div>
   );

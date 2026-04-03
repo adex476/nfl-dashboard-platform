@@ -1,16 +1,12 @@
-// ─── Singleton instances ──────────────────────────────────────────────────────
-import { MockDataLakeClient, MockModelClient } from "./mockClient";
-
 import type {
   Player,
   TeamStats,
   PredictionRequest,
   PredictionResult,
-  NullClawMessage,
-  NullClawResponse,
-  
+  NanoClawMessage,
+  NanoClawResponse,
 } from "@nfl/types";
-// ─── Base fetcher ─────────────────────────────────────────────────────────────
+
 async function apiFetch<T>(baseUrl: string, path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${baseUrl}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -20,9 +16,9 @@ async function apiFetch<T>(baseUrl: string, path: string, init?: RequestInit): P
   return res.json() as Promise<T>;
 }
 
-// ─── Data Lake client (port 8000) ─────────────────────────────────────────────
+// ─── Data Lake client ─────────────────────────────────────────────────────────
 export class DataLakeClient {
-  constructor(private base = "http://localhost:8000") {}
+  constructor(private base = "https://nfl-dashboard.duckdns.org") {}
 
   query(sql: string): Promise<Record<string, unknown>[]> {
     return apiFetch(this.base, "/query", {
@@ -38,8 +34,48 @@ export class DataLakeClient {
     return apiFetch(this.base, `/players?${params}`);
   }
 
+  searchPlayers(q: string): Promise<Player[]> {
+    return apiFetch(this.base, `/players/search?q=${encodeURIComponent(q)}`);
+  }
+
   player(name: string): Promise<Player> {
     return apiFetch(this.base, `/players/${encodeURIComponent(name)}`);
+  }
+
+  playerProfile(id: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/players/id/${encodeURIComponent(id)}/profile`);
+  }
+
+  playerAthletic(id: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/players/id/${encodeURIComponent(id)}/athletic`);
+  }
+
+  playerProduction(id: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/players/id/${encodeURIComponent(id)}/production`);
+  }
+
+  playerDurability(id: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/players/id/${encodeURIComponent(id)}/durability`);
+  }
+
+  playerDraftValue(id: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/players/id/${encodeURIComponent(id)}/draft-value`);
+  }
+
+  leaderboardAthletic(): Promise<Player[]> {
+    return apiFetch(this.base, "/players/leaderboard/athletic");
+  }
+
+  leaderboardProduction(): Promise<Player[]> {
+    return apiFetch(this.base, "/players/leaderboard/production");
+  }
+
+  leaderboardDraftValue(): Promise<Player[]> {
+    return apiFetch(this.base, "/players/leaderboard/draft-value");
+  }
+
+  teams(): Promise<{ abbr: string; name: string }[]> {
+    return apiFetch(this.base, "/teams");
   }
 
   teamStats(team: string, yearStart?: number, yearEnd?: number): Promise<TeamStats[]> {
@@ -54,22 +90,52 @@ export class DataLakeClient {
   }
 }
 
-// ─── Model Platform client (port 8001) ───────────────────────────────────────
+// ─── Model Platform client ────────────────────────────────────────────────────
+// ModelName uses underscores (player_projection) but API paths use hyphens (player-projection)
+function toApiPath(model: string): string {
+  return model.replace(/_/g, "-");
+}
+
 export class ModelClient {
-  constructor(private base = "http://localhost:8001") {}
+  constructor(private base = "https://nfl-dashboard.duckdns.org/api/models") {}
 
   predict(req: PredictionRequest): Promise<PredictionResult> {
-    return apiFetch(this.base, `/predict/${req.model}`, {
+    return apiFetch(this.base, `/${toApiPath(req.model)}/predict`, {
       method: "POST",
       body: JSON.stringify(req.inputs),
     });
   }
 
-  nullclaw(messages: NullClawMessage[]): Promise<NullClawResponse> {
-    return apiFetch(this.base, "/nullclaw/chat", {
+  schema(model: string): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, `/${toApiPath(model)}/schema`);
+  }
+
+  modelsHealth(): Promise<Record<string, unknown>> {
+    return apiFetch(this.base, "/health/models");
+  }
+
+  health(): Promise<{ status: string }> {
+    return apiFetch(this.base, "/health");
+  }
+}
+
+// ─── NanoClaw client ──────────────────────────────────────────────────────────
+export class NanoClawClient {
+  constructor(private base = "https://nfl-dashboard.duckdns.org/api/nanoclaw") {}
+
+  chat(messages: NanoClawMessage[]): Promise<NanoClawResponse> {
+    return apiFetch(this.base, "/chat", {
       method: "POST",
       body: JSON.stringify({ messages }),
     });
+  }
+
+  tools(): Promise<Record<string, unknown>[]> {
+    return apiFetch(this.base, "/tools");
+  }
+
+  chatHistory(sessionId: string): Promise<NanoClawMessage[]> {
+    return apiFetch(this.base, `/chat/history/${encodeURIComponent(sessionId)}`);
   }
 
   health(): Promise<{ status: string }> {
@@ -78,17 +144,15 @@ export class ModelClient {
 }
 
 // ─── Singleton instances ──────────────────────────────────────────────────────
-// export const dataLake = new DataLakeClient();
-// export const modelApi = new ModelClient();
+// Defaults use relative paths so the Vite proxy handles dev routing and
+// same-origin requests work in production without CORS issues.
+export const dataLake = new DataLakeClient(
+  import.meta.env.VITE_DATA_LAKE_URL || ""
+);
+export const modelApi = new ModelClient(
+  import.meta.env.VITE_MODEL_API_URL || "/api/models"
+);
+export const nanoClawApi = new NanoClawClient(
+  import.meta.env.VITE_NANOCLAW_URL || "/api/nanoclaw"
+);
 
-
-
-const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true";
-
-export const dataLake: DataLakeClient | MockDataLakeClient = isDemoMode
-  ? new MockDataLakeClient()
-  : new DataLakeClient(import.meta.env.VITE_DATA_LAKE_URL ?? "http://localhost:8000");
-
-export const modelApi: ModelClient | MockModelClient = isDemoMode
-  ? new MockModelClient()
-  : new ModelClient(import.meta.env.VITE_MODEL_API_URL ?? "http://localhost:8001");
