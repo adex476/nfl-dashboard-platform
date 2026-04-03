@@ -2,18 +2,30 @@ import { useState } from "react";
 import { dataLake } from "@nfl/api-client";
 
 const EXAMPLES = [
-  { label: "All 2025 WRs", sql: "SELECT name, college, forty, vertical FROM player_profiles WHERE position = 'WR' ORDER BY forty ASC LIMIT 20" },
-  { label: "Top 40 times",  sql: "SELECT name, position, forty FROM player_profiles WHERE forty IS NOT NULL ORDER BY forty ASC LIMIT 15" },
-  { label: "Team stats 2022", sql: "SELECT team, wins, losses, points_for, points_against FROM team_performance WHERE year = 2022 ORDER BY wins DESC" },
-  { label: "Draft round counts", sql: "SELECT draft_round, COUNT(*) AS picks FROM player_profiles GROUP BY draft_round ORDER BY draft_round" },
+  {
+    label: "All 2025 WRs",
+    sql: "SELECT name, college, forty, vertical FROM player_profiles WHERE position = 'WR' ORDER BY forty ASC LIMIT 20",
+  },
+  {
+    label: "Top 40 times",
+    sql: "SELECT name, position, forty FROM player_profiles WHERE forty IS NOT NULL ORDER BY forty ASC LIMIT 15",
+  },
+  {
+    label: "Team stats 2022",
+    sql: "SELECT team, wins, losses, points_for, points_against FROM team_performance WHERE year = 2022 ORDER BY wins DESC",
+  },
+  {
+    label: "Draft round counts",
+    sql: "SELECT draft_round, COUNT(*) AS picks FROM player_profiles GROUP BY draft_round ORDER BY draft_round",
+  },
 ];
 
 export default function QueryPage() {
-  const [sql, setSql]           = useState(EXAMPLES[0].sql);
-  const [rows, setRows]         = useState<Record<string, unknown>[] | null>(null);
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState<string | null>(null);
-  const [elapsed, setElapsed]   = useState<number | null>(null);
+  const [sql, setSql] = useState(EXAMPLES[0].sql);
+  const [rows, setRows] = useState<Record<string, unknown>[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState<number | null>(null);
 
   const runQuery = async () => {
     if (!sql.trim() || loading) return;
@@ -38,7 +50,14 @@ export default function QueryPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Header */}
       <div>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "42px", letterSpacing: "3px", lineHeight: 1 }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "42px",
+            letterSpacing: "3px",
+            lineHeight: 1,
+          }}
+        >
           SQL <span style={{ color: "var(--accent)" }}>QUERY</span>
         </h1>
         <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
@@ -78,26 +97,44 @@ export default function QueryPage() {
       </div>
 
       {/* Editor */}
-      <div style={{
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-lg)",
-        overflow: "hidden",
-      }}>
-        <div style={{
-          padding: "10px 16px",
-          borderBottom: "1px solid var(--border)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          background: "var(--bg-elevated)",
-        }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "1px" }}>
+      <div
+        style={{
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-lg)",
+          overflow: "hidden",
+        }}
+      >
+        <div
+          style={{
+            padding: "10px 16px",
+            borderBottom: "1px solid var(--border)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            background: "var(--bg-elevated)",
+          }}
+        >
+          <span
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "11px",
+              color: "var(--text-faint)",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+            }}
+          >
             SQL Editor
           </span>
           <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
             {elapsed !== null && (
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "11px", color: "var(--success)" }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: "11px",
+                  color: "var(--success)",
+                }}
+              >
                 {elapsed.toFixed(1)} ms
               </span>
             )}
@@ -145,28 +182,32 @@ export default function QueryPage() {
             outline: "none",
           }}
         />
-        <div style={{
-          padding: "6px 16px",
-          borderTop: "1px solid var(--border)",
-          fontSize: "11px",
-          color: "var(--text-faint)",
-          fontFamily: "var(--font-mono)",
-        }}>
+        <div
+          style={{
+            padding: "6px 16px",
+            borderTop: "1px solid var(--border)",
+            fontSize: "11px",
+            color: "var(--text-faint)",
+            fontFamily: "var(--font-mono)",
+          }}
+        >
           ⌘ + Enter to run · read-only (SELECT only)
         </div>
       </div>
 
       {/* Error */}
       {error && (
-        <div style={{
-          background: "var(--bg-surface)",
-          border: "1px solid var(--danger)",
-          borderRadius: "var(--radius-lg)",
-          padding: "16px",
-          fontFamily: "var(--font-mono)",
-          fontSize: "12px",
-          color: "var(--danger)",
-        }}>
+        <div
+          style={{
+            background: "var(--bg-surface)",
+            border: "1px solid var(--danger)",
+            borderRadius: "var(--radius-lg)",
+            padding: "16px",
+            fontFamily: "var(--font-mono)",
+            fontSize: "12px",
+            color: "var(--danger)",
+          }}
+        >
           {error}
         </div>
       )}
@@ -174,14 +215,16 @@ export default function QueryPage() {
       {/* Results */}
       {rows && (
         <div>
-          <p style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "11px",
-            color: "var(--text-faint)",
-            marginBottom: "12px",
-            textTransform: "uppercase",
-            letterSpacing: "1px",
-          }}>
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "11px",
+              color: "var(--text-faint)",
+              marginBottom: "12px",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+            }}
+          >
             {rows.length} row{rows.length !== 1 ? "s" : ""} returned
           </p>
           <div style={{ overflowX: "auto" }}>
@@ -189,17 +232,20 @@ export default function QueryPage() {
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)" }}>
                   {columns.map((col) => (
-                    <th key={col} style={{
-                      padding: "8px 12px",
-                      textAlign: "left",
-                      fontSize: "11px",
-                      fontFamily: "var(--font-mono)",
-                      fontWeight: 600,
-                      color: "var(--accent)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.5px",
-                      whiteSpace: "nowrap",
-                    }}>
+                    <th
+                      key={col}
+                      style={{
+                        padding: "8px 12px",
+                        textAlign: "left",
+                        fontSize: "11px",
+                        fontFamily: "var(--font-mono)",
+                        fontWeight: 600,
+                        color: "var(--accent)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.5px",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
                       {col}
                     </th>
                   ))}
@@ -210,20 +256,31 @@ export default function QueryPage() {
                   <tr
                     key={i}
                     style={{ borderBottom: "1px solid var(--border)" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-elevated)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "var(--bg-elevated)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
                   >
                     {columns.map((col) => (
-                      <td key={col} style={{
-                        padding: "8px 12px",
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "12px",
-                        color: "var(--text-muted)",
-                        whiteSpace: "nowrap",
-                      }}>
-                        {row[col] !== null && row[col] !== undefined
-                          ? String(row[col])
-                          : <span style={{ color: "var(--text-faint)" }}>null</span>}
+                      <td
+                        key={col}
+                        style={{
+                          padding: "8px 12px",
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "12px",
+                          color: "var(--text-muted)",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {row[col] !== null && row[col] !== undefined ? (
+                          String(row[col])
+                        ) : (
+                          <span style={{ color: "var(--text-faint)" }}>
+                            null
+                          </span>
+                        )}
                       </td>
                     ))}
                   </tr>

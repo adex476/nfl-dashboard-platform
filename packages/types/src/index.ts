@@ -71,4 +71,4 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-export * from "./mockData"
+export * from "./mockData";

@@ -24,4 +24,3 @@
     "password": "${SSH_PASSWORD}"
   }
 ]
-

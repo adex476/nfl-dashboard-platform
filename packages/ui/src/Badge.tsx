@@ -7,9 +7,9 @@ interface BadgeProps {
 
 const colors: Record<NonNullable<BadgeProps["variant"]>, string> = {
   default: "var(--text-muted)",
-  accent:  "var(--accent)",
-  gold:    "var(--accent-gold)",
-  danger:  "var(--danger)",
+  accent: "var(--accent)",
+  gold: "var(--accent-gold)",
+  danger: "var(--danger)",
   success: "var(--success)",
 };
 

@@ -14,8 +14,8 @@ This is an NFL-focused data lake platform with a REST API, SQL query engine (Duc
 - **Data Manipulation**: Primarily use `pandas` and `polars`. Be mindful of converting between them (`.to_pandas()`, `polars.from_pandas()`).
 - **API**: `fastapi` is used for the REST API. Routers are separated by domain in `api/routers/`.
 - **Database**:
-    - `duckdb` for SQL queries on the curated Parquet files.
-    - `neo4j` for graph-based data and relationships.
+  - `duckdb` for SQL queries on the curated Parquet files.
+  - `neo4j` for graph-based data and relationships.
 - **ML**: `scikit-learn` for model training.
 
 ## Commands

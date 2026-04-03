@@ -11,9 +11,9 @@ interface ApiHealth {
 const POLL_INTERVAL = 15_000;
 
 export function useApiHealth(): ApiHealth {
-  const [dataLakeOk, setDataLakeOk]   = useState<boolean | null>(null);
-  const [modelsOk, setModelsOk]       = useState<boolean | null>(null);
-  const [nanoClawOk, setNanoClawOk]   = useState<boolean | null>(null);
+  const [dataLakeOk, setDataLakeOk] = useState<boolean | null>(null);
+  const [modelsOk, setModelsOk] = useState<boolean | null>(null);
+  const [nanoClawOk, setNanoClawOk] = useState<boolean | null>(null);
 
   useEffect(() => {
     async function check() {
@@ -43,8 +43,10 @@ export function useApiHealth(): ApiHealth {
   }, []);
 
   // Only show demo mode once checks have completed and all failed
-  const checksComplete = dataLakeOk !== null && modelsOk !== null && nanoClawOk !== null;
-  const isDemoMode = import.meta.env.VITE_DEMO_MODE === "true" ||
+  const checksComplete =
+    dataLakeOk !== null && modelsOk !== null && nanoClawOk !== null;
+  const isDemoMode =
+    import.meta.env.VITE_DEMO_MODE === "true" ||
     (checksComplete && !dataLakeOk && !modelsOk && !nanoClawOk);
 
   return { dataLakeOk, modelsOk, nanoClawOk, isDemoMode };

@@ -10,10 +10,10 @@ const SUGGESTIONS = [
 ];
 
 export default function NanoClawPage() {
-  const [messages, setMessages]   = useState<NanoClawMessage[]>([]);
-  const [input, setInput]         = useState("");
-  const [loading, setLoading]     = useState(false);
-  const bottomRef                 = useRef<HTMLDivElement>(null);
+  const [messages, setMessages] = useState<NanoClawMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -31,20 +31,37 @@ export default function NanoClawPage() {
       const res = await nanoClawApi.chat(next); // ← was: modelApi.nullclaw(next)
       setMessages([...next, { role: "assistant", content: res.reply }]);
     } catch (e) {
-      setMessages([...next, {
-        role: "assistant",
-        content: `⚠ Could not reach NanoClaw: ${String(e)}`,
-      }]);
+      setMessages([
+        ...next,
+        {
+          role: "assistant",
+          content: `⚠ Could not reach NanoClaw: ${String(e)}`,
+        },
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px", height: "100%" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: "24px",
+        height: "100%",
+      }}
+    >
       {/* Header */}
       <div>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "42px", letterSpacing: "3px", lineHeight: 1 }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "42px",
+            letterSpacing: "3px",
+            lineHeight: 1,
+          }}
+        >
           NULL<span style={{ color: "var(--accent)" }}>CLAW</span>
         </h1>
         <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
@@ -87,14 +104,16 @@ export default function NanoClawPage() {
       )}
 
       {/* Message history */}
-      <div style={{
-        flex: 1,
-        overflowY: "auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: "12px",
-        minHeight: "200px",
-      }}>
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          minHeight: "200px",
+        }}
+      >
         {messages.map((msg, i) => (
           <div
             key={i}
@@ -103,33 +122,42 @@ export default function NanoClawPage() {
               justifyContent: msg.role === "user" ? "flex-end" : "flex-start",
             }}
           >
-            <div style={{
-              maxWidth: "75%",
-              padding: "10px 14px",
-              borderRadius: "var(--radius-lg)",
-              background: msg.role === "user" ? "var(--accent)" : "var(--bg-surface)",
-              color: msg.role === "user" ? "var(--bg-base)" : "var(--text-primary)",
-              border: msg.role === "assistant" ? "1px solid var(--border)" : "none",
-              fontFamily: "var(--font-body)",
-              fontSize: "14px",
-              lineHeight: 1.6,
-              whiteSpace: "pre-wrap",
-            }}>
+            <div
+              style={{
+                maxWidth: "75%",
+                padding: "10px 14px",
+                borderRadius: "var(--radius-lg)",
+                background:
+                  msg.role === "user" ? "var(--accent)" : "var(--bg-surface)",
+                color:
+                  msg.role === "user"
+                    ? "var(--bg-base)"
+                    : "var(--text-primary)",
+                border:
+                  msg.role === "assistant" ? "1px solid var(--border)" : "none",
+                fontFamily: "var(--font-body)",
+                fontSize: "14px",
+                lineHeight: 1.6,
+                whiteSpace: "pre-wrap",
+              }}
+            >
               {msg.content}
             </div>
           </div>
         ))}
         {loading && (
           <div style={{ display: "flex", justifyContent: "flex-start" }}>
-            <div style={{
-              padding: "10px 14px",
-              borderRadius: "var(--radius-lg)",
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border)",
-              fontFamily: "var(--font-mono)",
-              fontSize: "12px",
-              color: "var(--text-faint)",
-            }}>
+            <div
+              style={{
+                padding: "10px 14px",
+                borderRadius: "var(--radius-lg)",
+                background: "var(--bg-surface)",
+                border: "1px solid var(--border)",
+                fontFamily: "var(--font-mono)",
+                fontSize: "12px",
+                color: "var(--text-faint)",
+              }}
+            >
               thinking…
             </div>
           </div>
@@ -138,19 +166,23 @@ export default function NanoClawPage() {
       </div>
 
       {/* Input */}
-      <div style={{
-        display: "flex",
-        gap: "8px",
-        background: "var(--bg-surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-lg)",
-        padding: "8px",
-      }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "8px",
+          background: "var(--bg-surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-lg)",
+          padding: "8px",
+        }}
+      >
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") send(input); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") send(input);
+          }}
           placeholder="Ask NanoClaw anything about the draft…"
           disabled={loading}
           style={{
@@ -168,8 +200,10 @@ export default function NanoClawPage() {
           onClick={() => send(input)}
           disabled={loading || !input.trim()}
           style={{
-            background: loading || !input.trim() ? "var(--bg-elevated)" : "var(--accent)",
-            color: loading || !input.trim() ? "var(--text-faint)" : "var(--bg-base)",
+            background:
+              loading || !input.trim() ? "var(--bg-elevated)" : "var(--accent)",
+            color:
+              loading || !input.trim() ? "var(--text-faint)" : "var(--bg-base)",
             border: "none",
             borderRadius: "var(--radius)",
             padding: "6px 16px",

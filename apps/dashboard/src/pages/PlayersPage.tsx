@@ -2,29 +2,42 @@ import { useState, useEffect } from "react";
 import type { Player } from "@nfl/types";
 import { dataLake } from "@nfl/api-client";
 
-const POSITIONS = ["All", "QB", "RB", "WR", "TE", "OT", "IOL", "EDGE", "DT", "LB", "CB", "S"];
+const POSITIONS = [
+  "All",
+  "QB",
+  "RB",
+  "WR",
+  "TE",
+  "OT",
+  "IOL",
+  "EDGE",
+  "DT",
+  "LB",
+  "CB",
+  "S",
+];
 
 const COLS: Array<{ key: keyof Player; label: string; mono?: boolean }> = [
-  { key: "name",        label: "Name" },
-  { key: "position",    label: "Pos",        mono: true },
-  { key: "college",     label: "College" },
-  { key: "draft_round", label: "Rd",         mono: true },
-  { key: "draft_pick",  label: "Pick",       mono: true },
-  { key: "draft_team",  label: "Team" },
-  { key: "forty",       label: "40yd",       mono: true },
-  { key: "bench",       label: "Bench",      mono: true },
-  { key: "vertical",    label: "Vert",       mono: true },
+  { key: "name", label: "Name" },
+  { key: "position", label: "Pos", mono: true },
+  { key: "college", label: "College" },
+  { key: "draft_round", label: "Rd", mono: true },
+  { key: "draft_pick", label: "Pick", mono: true },
+  { key: "draft_team", label: "Team" },
+  { key: "forty", label: "40yd", mono: true },
+  { key: "bench", label: "Bench", mono: true },
+  { key: "vertical", label: "Vert", mono: true },
 ];
 
 export default function PlayersPage() {
-  const [players, setPlayers]     = useState<Player[]>([]);
-  const [filtered, setFiltered]   = useState<Player[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
-  const [position, setPosition]   = useState("All");
-  const [search, setSearch]       = useState("");
-  const [sortKey, setSortKey]     = useState<keyof Player>("draft_pick");
-  const [sortAsc, setSortAsc]     = useState(true);
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [filtered, setFiltered] = useState<Player[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [position, setPosition] = useState("All");
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<keyof Player>("draft_pick");
+  const [sortAsc, setSortAsc] = useState(true);
 
   // Load players
   useEffect(() => {
@@ -32,18 +45,27 @@ export default function PlayersPage() {
     setError(null);
     dataLake
       .players()
-      .then((data) => { setPlayers(data); setLoading(false); })
-      .catch((e) => { setError(String(e)); setLoading(false); });
+      .then((data) => {
+        setPlayers(data);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(String(e));
+        setLoading(false);
+      });
   }, []);
 
   // Filter + sort
   useEffect(() => {
     let result = [...players];
-    if (position !== "All") result = result.filter((p) => p.position === position);
+    if (position !== "All")
+      result = result.filter((p) => p.position === position);
     if (search) {
       const q = search.toLowerCase();
       result = result.filter(
-        (p) => p.name.toLowerCase().includes(q) || p.college.toLowerCase().includes(q)
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.college.toLowerCase().includes(q),
       );
     }
     result.sort((a, b) => {
@@ -58,14 +80,24 @@ export default function PlayersPage() {
 
   const toggleSort = (key: keyof Player) => {
     if (sortKey === key) setSortAsc((v) => !v);
-    else { setSortKey(key); setSortAsc(true); }
+    else {
+      setSortKey(key);
+      setSortAsc(true);
+    }
   };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Header */}
       <div>
-        <h1 style={{ fontFamily: "var(--font-display)", fontSize: "42px", letterSpacing: "3px", lineHeight: 1 }}>
+        <h1
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "42px",
+            letterSpacing: "3px",
+            lineHeight: 1,
+          }}
+        >
           PLAYER <span style={{ color: "var(--accent)" }}>DATABASE</span>
         </h1>
         <p style={{ color: "var(--text-muted)", marginTop: "8px" }}>
@@ -74,7 +106,14 @@ export default function PlayersPage() {
       </div>
 
       {/* Controls */}
-      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", alignItems: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          gap: "12px",
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -88,16 +127,27 @@ export default function PlayersPage() {
               onClick={() => setPosition(p)}
               style={{
                 ...chipStyle,
-                color:      position === p ? "var(--accent)"    : "var(--text-muted)",
-                background: position === p ? "var(--accent-dim)": "transparent",
-                border:     position === p ? "1px solid var(--accent)" : "1px solid var(--border)",
+                color: position === p ? "var(--accent)" : "var(--text-muted)",
+                background:
+                  position === p ? "var(--accent-dim)" : "transparent",
+                border:
+                  position === p
+                    ? "1px solid var(--accent)"
+                    : "1px solid var(--border)",
               }}
             >
               {p}
             </button>
           ))}
         </div>
-        <span style={{ marginLeft: "auto", fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--text-faint)" }}>
+        <span
+          style={{
+            marginLeft: "auto",
+            fontFamily: "var(--font-mono)",
+            fontSize: "12px",
+            color: "var(--text-faint)",
+          }}
+        >
           {filtered.length} results
         </span>
       </div>
@@ -123,7 +173,10 @@ export default function PlayersPage() {
                       fontWeight: 600,
                       letterSpacing: "1px",
                       textTransform: "uppercase",
-                      color: sortKey === col.key ? "var(--accent)" : "var(--text-faint)",
+                      color:
+                        sortKey === col.key
+                          ? "var(--accent)"
+                          : "var(--text-faint)",
                       cursor: "pointer",
                       userSelect: "none",
                       whiteSpace: "nowrap",
@@ -131,7 +184,9 @@ export default function PlayersPage() {
                   >
                     {col.label}
                     {sortKey === col.key && (
-                      <span style={{ marginLeft: "4px" }}>{sortAsc ? "↑" : "↓"}</span>
+                      <span style={{ marginLeft: "4px" }}>
+                        {sortAsc ? "↑" : "↓"}
+                      </span>
                     )}
                   </th>
                 ))}
@@ -145,8 +200,12 @@ export default function PlayersPage() {
                     borderBottom: "1px solid var(--border)",
                     transition: "background 0.1s",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-elevated)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background = "var(--bg-elevated)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
                 >
                   {COLS.map((col) => (
                     <td
@@ -154,21 +213,36 @@ export default function PlayersPage() {
                       style={{
                         padding: "10px 12px",
                         fontSize: "13px",
-                        fontFamily: col.mono ? "var(--font-mono)" : "var(--font-body)",
-                        color: col.key === "name" ? "var(--text-primary)" : "var(--text-muted)",
+                        fontFamily: col.mono
+                          ? "var(--font-mono)"
+                          : "var(--font-body)",
+                        color:
+                          col.key === "name"
+                            ? "var(--text-primary)"
+                            : "var(--text-muted)",
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {player[col.key] !== null && player[col.key] !== undefined
-                        ? String(player[col.key])
-                        : <span style={{ color: "var(--text-faint)" }}>—</span>}
+                      {player[col.key] !== null &&
+                      player[col.key] !== undefined ? (
+                        String(player[col.key])
+                      ) : (
+                        <span style={{ color: "var(--text-faint)" }}>—</span>
+                      )}
                     </td>
                   ))}
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={COLS.length} style={{ padding: "40px", textAlign: "center", color: "var(--text-faint)" }}>
+                  <td
+                    colSpan={COLS.length}
+                    style={{
+                      padding: "40px",
+                      textAlign: "center",
+                      color: "var(--text-faint)",
+                    }}
+                  >
                     No players match your filters.
                   </td>
                 </tr>
@@ -207,12 +281,24 @@ const chipStyle: React.CSSProperties = {
 // ─── States ───────────────────────────────────────────────────────────────────
 function LoadingState() {
   return (
-    <div style={{ textAlign: "center", padding: "60px", color: "var(--text-faint)" }}>
-      <div style={{
-        width: 28, height: 28, margin: "0 auto 12px",
-        border: "2px solid var(--border)", borderTopColor: "var(--accent)",
-        borderRadius: "50%", animation: "spin 0.7s linear infinite",
-      }} />
+    <div
+      style={{
+        textAlign: "center",
+        padding: "60px",
+        color: "var(--text-faint)",
+      }}
+    >
+      <div
+        style={{
+          width: 28,
+          height: 28,
+          margin: "0 auto 12px",
+          border: "2px solid var(--border)",
+          borderTopColor: "var(--accent)",
+          borderRadius: "50%",
+          animation: "spin 0.7s linear infinite",
+        }}
+      />
       Loading players from data lake…
     </div>
   );
@@ -220,17 +306,25 @@ function LoadingState() {
 
 function ErrorState({ message }: { message: string }) {
   return (
-    <div style={{
-      background: "var(--bg-surface)",
-      border: "1px solid var(--danger)",
-      borderRadius: "var(--radius-lg)",
-      padding: "24px",
-      color: "var(--danger)",
-      fontFamily: "var(--font-mono)",
-      fontSize: "13px",
-    }}>
+    <div
+      style={{
+        background: "var(--bg-surface)",
+        border: "1px solid var(--danger)",
+        borderRadius: "var(--radius-lg)",
+        padding: "24px",
+        color: "var(--danger)",
+        fontFamily: "var(--font-mono)",
+        fontSize: "13px",
+      }}
+    >
       <strong>Could not reach Data Lake</strong>
-      <p style={{ marginTop: "8px", color: "var(--text-muted)", fontFamily: "var(--font-body)" }}>
+      <p
+        style={{
+          marginTop: "8px",
+          color: "var(--text-muted)",
+          fontFamily: "var(--font-body)",
+        }}
+      >
         {message}
       </p>
       <p style={{ marginTop: "8px", color: "var(--text-faint)" }}>

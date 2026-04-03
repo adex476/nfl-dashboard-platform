@@ -31,7 +31,9 @@ export function StatBlock({ label, value, sub, accent }: StatBlockProps) {
         {value}
       </span>
       {sub && (
-        <span style={{ fontSize: "11px", color: "var(--text-faint)" }}>{sub}</span>
+        <span style={{ fontSize: "11px", color: "var(--text-faint)" }}>
+          {sub}
+        </span>
       )}
     </div>
   );
