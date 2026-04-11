@@ -35,63 +35,63 @@ export class DataLakeClient {
     const params = new URLSearchParams();
     if (position) params.set("position", position);
     if (year) params.set("year", String(year));
-    return apiFetch(this.base, `/players?${params}`);
+    return apiFetch(this.base, `/api/players?${params}`);
   }
 
   searchPlayers(q: string): Promise<Player[]> {
-    return apiFetch(this.base, `/players/search?q=${encodeURIComponent(q)}`);
+    return apiFetch(this.base, `api/players/search?q=${encodeURIComponent(q)}`);
   }
 
   player(name: string): Promise<Player> {
-    return apiFetch(this.base, `/players/${encodeURIComponent(name)}`);
+    return apiFetch(this.base, `/api/players/${encodeURIComponent(name)}`);
   }
 
   playerProfile(id: string): Promise<Record<string, unknown>> {
-    return apiFetch(this.base, `/players/id/${encodeURIComponent(id)}/profile`);
+    return apiFetch(this.base, `/api/players/id/${encodeURIComponent(id)}/profile`);
   }
 
   playerAthletic(id: string): Promise<Record<string, unknown>> {
     return apiFetch(
       this.base,
-      `/players/id/${encodeURIComponent(id)}/athletic`,
+      `/api/players/id/${encodeURIComponent(id)}/athletic`,
     );
   }
 
   playerProduction(id: string): Promise<Record<string, unknown>> {
     return apiFetch(
       this.base,
-      `/players/id/${encodeURIComponent(id)}/production`,
+      `/api/players/id/${encodeURIComponent(id)}/production`,
     );
   }
 
   playerDurability(id: string): Promise<Record<string, unknown>> {
     return apiFetch(
       this.base,
-      `/players/id/${encodeURIComponent(id)}/durability`,
+      `/api/players/id/${encodeURIComponent(id)}/durability`,
     );
   }
 
   playerDraftValue(id: string): Promise<Record<string, unknown>> {
     return apiFetch(
       this.base,
-      `/players/id/${encodeURIComponent(id)}/draft-value`,
+      `/api/players/id/${encodeURIComponent(id)}/draft-value`,
     );
   }
 
   leaderboardAthletic(): Promise<Player[]> {
-    return apiFetch(this.base, "/players/leaderboard/athletic");
+    return apiFetch(this.base, "/api/players/leaderboard/athletic");
   }
 
   leaderboardProduction(): Promise<Player[]> {
-    return apiFetch(this.base, "/players/leaderboard/production");
+    return apiFetch(this.base, "/api/players/leaderboard/production");
   }
 
   leaderboardDraftValue(): Promise<Player[]> {
-    return apiFetch(this.base, "/players/leaderboard/draft-value");
+    return apiFetch(this.base, "/api/players/leaderboard/draft-value");
   }
 
   teams(): Promise<{ abbr: string; name: string }[]> {
-    return apiFetch(this.base, "/teams");
+    return apiFetch(this.base, "/api/teams");
   }
 
   teamStats(
@@ -102,11 +102,11 @@ export class DataLakeClient {
     const params = new URLSearchParams();
     if (yearStart) params.set("year_start", String(yearStart));
     if (yearEnd) params.set("year_end", String(yearEnd));
-    return apiFetch(this.base, `/teams/${team}/stats?${params}`);
+    return apiFetch(this.base, `/api/teams/${team}/stats?${params}`);
   }
 
   health(): Promise<{ status: string }> {
-    return apiFetch(this.base, "/health");
+    return apiFetch(this.base, "/api/health");
   }
 }
 
@@ -131,11 +131,11 @@ export class ModelClient {
   }
 
   modelsHealth(): Promise<Record<string, unknown>> {
-    return apiFetch(this.base, "/health/models");
+    return apiFetch(this.base, " /api/models/health");
   }
 
   health(): Promise<{ status: string }> {
-    return apiFetch(this.base, "/health");
+    return apiFetch(this.base, "/api/health");
   }
 }
 
@@ -146,25 +146,25 @@ export class NanoClawClient {
   ) {}
 
   chat(messages: NanoClawMessage[], sessionId: string): Promise<NanoClawResponse> {
-    return apiFetch(this.base, "/chat", {
+    return apiFetch(this.base, "/api/nanoclaw/chat", {
       method: "POST",
       body: JSON.stringify({ messages, session_id: sessionId }),
     });
   }
 
   tools(): Promise<Record<string, unknown>[]> {
-    return apiFetch(this.base, "/tools");
+    return apiFetch(this.base, "/api/nanoclaw/tools");
   }
 
   chatHistory(sessionId: string): Promise<NanoClawMessage[]> {
     return apiFetch(
       this.base,
-      `/chat/history/${encodeURIComponent(sessionId)}`,
+      `/api/nanoclaw/chat/history/${encodeURIComponent(sessionId)}`,
     );
   }
 
   health(): Promise<{ status: string }> {
-    return apiFetch(this.base, "/health");
+    return apiFetch(this.base, "/api/nanoclaw/health");
   }
 }
 
@@ -172,7 +172,7 @@ export class NanoClawClient {
 // Defaults use relative paths so the Vite proxy handles dev routing and
 // same-origin requests work in production without CORS issues.
 export const dataLake = new DataLakeClient(
-  import.meta.env.VITE_DATA_LAKE_URL || "",
+  import.meta.env.VITE_DATA_LAKE_URL || "/api",
 );
 export const modelApi = new ModelClient(
   import.meta.env.VITE_MODEL_API_URL || "/api/models",
