@@ -4,11 +4,11 @@ import { dataLake } from "@nfl/api-client";
 const EXAMPLES = [
   {
     label: "All 2025 WRs",
-    sql: "SELECT name, college, forty, vertical FROM player_profiles WHERE position = 'WR' ORDER BY forty ASC LIMIT 20",
+    sql: "SELECT player_name, college, forty_yard, vertical_in FROM player_profiles WHERE position = 'WR' ORDER BY forty_yard ASC LIMIT 20",
   },
   {
     label: "Top 40 times",
-    sql: "SELECT name, position, forty FROM player_profiles WHERE forty IS NOT NULL ORDER BY forty ASC LIMIT 15",
+    sql: "SELECT player_name, position, forty_yard FROM player_profiles WHERE forty_yard IS NOT NULL ORDER BY forty_yard ASC LIMIT 15",
   },
   {
     label: "Team stats 2022",
@@ -34,7 +34,14 @@ export default function QueryPage() {
     setRows(null);
     const t0 = performance.now();
     try {
-      const data = await dataLake.query(sql);
+      const raw = await dataLake.query(sql);
+      const data: Record<string, unknown>[] = Array.isArray(raw)
+        ? raw
+        : Array.isArray((raw as Record<string, unknown>).data)
+          ? (raw as Record<string, unknown[]>).data as Record<string, unknown>[]
+          : Array.isArray((raw as Record<string, unknown>).rows)
+            ? (raw as Record<string, unknown[]>).rows as Record<string, unknown>[]
+            : [];
       setRows(data);
       setElapsed(performance.now() - t0);
     } catch (e) {

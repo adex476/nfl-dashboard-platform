@@ -16,9 +16,14 @@ function resolveStatus(val: unknown): "ready" | "pending" {
   if (typeof val === "string") return val === "ready" || val === "ok" ? "ready" : "pending";
   if (typeof val === "object" && val !== null) {
     const obj = val as Record<string, unknown>;
-    // registry entry shape: {model_name, latest, loaded, ...}
+    // registry entry shape: {model_name, latest, loaded, status, ...}
     if ("model_name" in obj) {
-      return obj.latest != null ? "ready" : "pending";
+      return (
+        obj.latest != null ||
+        obj.loaded === true ||
+        obj.status === "ready" ||
+        obj.status === "ok"
+      ) ? "ready" : "pending";
     }
     const s = obj.status ?? obj.state;
     return resolveStatus(s);

@@ -18,15 +18,15 @@ const POSITIONS = [
 ];
 
 const COLS: Array<{ key: keyof Player; label: string; mono?: boolean }> = [
-  { key: "name", label: "Name" },
+  { key: "player_name", label: "Name" },
   { key: "position", label: "Pos", mono: true },
-  { key: "college", label: "College" },
+  { key: "school", label: "College" },
   { key: "draft_round", label: "Rd", mono: true },
   { key: "draft_pick", label: "Pick", mono: true },
   { key: "draft_team", label: "Team" },
-  { key: "forty", label: "40yd", mono: true },
-  { key: "bench", label: "Bench", mono: true },
-  { key: "vertical", label: "Vert", mono: true },
+  { key: "forty_yard", label: "40yd", mono: true },
+  { key: "bench_reps", label: "Bench", mono: true },
+  { key: "vertical_in", label: "Vert", mono: true },
 ];
 
 export default function PlayersPage() {
@@ -46,7 +46,7 @@ export default function PlayersPage() {
     dataLake
       .players()
       .then((data) => {
-        setPlayers(data);
+        setPlayers(data.players || []);
         setLoading(false);
       })
       .catch((e) => {
@@ -64,8 +64,8 @@ export default function PlayersPage() {
       const q = search.toLowerCase();
       result = result.filter(
         (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.college.toLowerCase().includes(q),
+          p.player_name.toLowerCase().includes(q) ||
+          (p.school || "").toLowerCase().includes(q),
       );
     }
     result.sort((a, b) => {
@@ -217,7 +217,7 @@ export default function PlayersPage() {
                           ? "var(--font-mono)"
                           : "var(--font-body)",
                         color:
-                          col.key === "name"
+                          col.key === "player_name"
                             ? "var(--text-primary)"
                             : "var(--text-muted)",
                         whiteSpace: "nowrap",

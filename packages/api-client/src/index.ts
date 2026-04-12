@@ -43,10 +43,11 @@
       });
     }
 
-    players(position?: string, year?: number): Promise<Player[]> {
+    players(position?: string, year?: number, limit = 10000): Promise<Player[]> {
       const params = new URLSearchParams();
       if (position) params.set("position", position);
       if (year) params.set("year", String(year));
+      params.set("limit", String(limit));
       return apiFetch(this.base, `/players?${params}`);
     }
 
