@@ -1,4 +1,5 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { useApiHealth } from "../../hooks/useApiHealth";
 import styles from "./AppShell.module.css";
@@ -13,43 +14,65 @@ const NAV = [
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const { dataLakeOk, modelsOk, nanoClawOk } = useApiHealth();
+  const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className={styles.shell}>
-      <aside className={styles.sidebar}>
+      <aside className={`${styles.sidebar} ${collapsed ? styles.sidebarCollapsed : ""}`}>
         <div className={styles.logo}>
-          <span className={styles.logoAccent}>NFL</span>
-          <span className={styles.logoSub}>SCOUT</span>
+          {!collapsed && <span className={styles.logoAccent}>NFL</span>}
+          {!collapsed && <span className={styles.logoSub}>SCOUT</span>}
+          {collapsed && <span className={styles.logoAccentSmall}>N</span>}
         </div>
 
-        <DemoModeBanner />
+        {!collapsed && <DemoModeBanner />}
 
         <nav className={styles.nav}>
           {NAV.map(({ to, label, icon }) => (
             <NavLink
               key={to}
               to={to}
+              title={collapsed ? label : undefined}
               className={({ isActive }) =>
-                `${styles.navItem} ${isActive ? styles.navActive : ""}`
+                `${styles.navItem} ${isActive ? styles.navActive : ""} ${collapsed ? styles.navItemCollapsed : ""}`
               }
             >
               <span className={styles.navIcon}>{icon}</span>
-              <span>{label}</span>
+              {!collapsed && <span>{label}</span>}
             </NavLink>
           ))}
         </nav>
 
-        <div className={styles.sidebarFooter}>
-          <p className={styles.footerLabel}>Services</p>
-          <StatusRow label="Data Lake" port={8000} ok={dataLakeOk} />
-          <StatusRow label="Models" port={8001} ok={modelsOk} />
-          <StatusRow label="NanoClaw" port={8002} ok={nanoClawOk} />
-        </div>
+        {!collapsed && (
+          <div className={styles.sidebarFooter}>
+            <p className={styles.footerLabel}>Services</p>
+            <StatusRow label="Data Lake" port={8000} ok={dataLakeOk} />
+            <StatusRow label="Models" port={8001} ok={modelsOk} />
+            <StatusRow label="NanoClaw" port={8002} ok={nanoClawOk} />
+          </div>
+        )}
+
+        <button
+          className={styles.toggleBtn}
+          onClick={() => setCollapsed((v) => !v)}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? "›" : "‹"}
+        </button>
       </aside>
 
       <main className={styles.main}>
         <div className="fade-in">{children}</div>
       </main>
+
+      <button
+        className={styles.nanoclawFab}
+        onClick={() => navigate("/nanoclaw")}
+        title="Open NanoClaw"
+      >
+        🤖
+      </button>
     </div>
   );
 }

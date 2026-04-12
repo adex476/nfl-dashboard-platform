@@ -1,21 +1,20 @@
 // ─── Data Lake types ──────────────────────────────────────────────────────────
 export interface Player {
-  id: string;
   player_name: string;
   position: string;
   school: string | null;
-  draft_year: number;
-  draft_round: number;
-  draft_pick: number;
-  draft_team: string;
-  ht_inches: number;
-  wt: number;
+  height_in: number | null;
+  weight_lbs: number | null;
   forty_yard: number | null;
-  bench_reps: number | null;
   vertical_in: number | null;
-  broad_jump: number | null;
-  cone: number | null;
+  bench_reps: number | null;
+  broad_jump_in: number | null;
+  three_cone: number | null;
   shuttle: number | null;
+  draft_team: string | null;
+  draft_round: string | null;
+  draft_pick: number | null;
+  draft_year: number | null;
 }
 
 export interface TeamStats {

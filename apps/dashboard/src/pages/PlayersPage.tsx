@@ -21,12 +21,18 @@ const COLS: Array<{ key: keyof Player; label: string; mono?: boolean }> = [
   { key: "player_name", label: "Name" },
   { key: "position", label: "Pos", mono: true },
   { key: "school", label: "College" },
+  { key: "height_in", label: "Ht", mono: true },
+  { key: "weight_lbs", label: "Wt", mono: true },
+  { key: "draft_year", label: "Year", mono: true },
   { key: "draft_round", label: "Rd", mono: true },
   { key: "draft_pick", label: "Pick", mono: true },
   { key: "draft_team", label: "Team" },
   { key: "forty_yard", label: "40yd", mono: true },
-  { key: "bench_reps", label: "Bench", mono: true },
   { key: "vertical_in", label: "Vert", mono: true },
+  { key: "bench_reps", label: "Bench", mono: true },
+  { key: "broad_jump_in", label: "Broad", mono: true },
+  { key: "three_cone", label: "3-Cone", mono: true },
+  { key: "shuttle", label: "Shuttle", mono: true },
 ];
 
 export default function PlayersPage() {
@@ -195,7 +201,7 @@ export default function PlayersPage() {
             <tbody>
               {filtered.map((player, i) => (
                 <tr
-                  key={player.id ?? i}
+                  key={player.player_name ?? i}
                   style={{
                     borderBottom: "1px solid var(--border)",
                     transition: "background 0.1s",

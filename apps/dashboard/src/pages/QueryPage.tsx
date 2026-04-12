@@ -4,7 +4,7 @@ import { dataLake } from "@nfl/api-client";
 const EXAMPLES = [
   {
     label: "All 2025 WRs",
-    sql: "SELECT player_name, college, forty_yard, vertical_in FROM player_profiles WHERE position = 'WR' ORDER BY forty_yard ASC LIMIT 20",
+    sql: "SELECT player_name, school, forty_yard, vertical_in FROM player_profiles WHERE position = 'WR' ORDER BY forty_yard ASC LIMIT 20",
   },
   {
     label: "Top 40 times",
@@ -12,7 +12,7 @@ const EXAMPLES = [
   },
   {
     label: "Team stats 2022",
-    sql: "SELECT team, wins, losses, points_for, points_against FROM team_performance WHERE year = 2022 ORDER BY wins DESC",
+    sql: "SELECT team, offense_ave_yards_gained_pass, offense_ave_yards_gained_run, defense_ave_yards_gained_pass, defense_ave_yards_gained_run FROM team_performance ORDER BY offense_ave_yards_gained_pass DESC LIMIT 20",
   },
   {
     label: "Draft round counts",
