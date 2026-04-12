@@ -1,20 +1,33 @@
+import { useState, useEffect } from "react";
 import { useApiHealth } from "../hooks/useApiHealth";
+import { modelApi } from "@nfl/api-client";
 
-const MODELS: { name: string; key: string; status: "ready" | "pending" }[] = [
-  { name: "Player Projection", key: "player_projection", status: "ready" },
-  { name: "Draft Optimizer", key: "draft_optimizer", status: "pending" },
-  { name: "Team Diagnosis", key: "team_diagnosis", status: "pending" },
-  { name: "Roster Fit", key: "roster_fit", status: "pending" },
-  {
-    name: "Positional Flexibility",
-    key: "positional_flexibility",
-    status: "pending",
-  },
-  { name: "Health Analyzer", key: "health_analyzer", status: "pending" },
+const MODELS: { name: string; key: string }[] = [
+  { name: "Player Projection", key: "player_projection" },
+  { name: "Draft Optimizer", key: "draft_optimizer" },
+  { name: "Team Diagnosis", key: "team_diagnosis" },
+  { name: "Roster Fit", key: "roster_fit" },
+  { name: "Positional Flexibility", key: "positional_flexibility" },
+  { name: "Health Analyzer", key: "health_analyzer" },
 ];
+
+function resolveStatus(val: unknown): "ready" | "pending" {
+  if (!val) return "pending";
+  if (typeof val === "string") return val === "ready" || val === "ok" ? "ready" : "pending";
+  if (typeof val === "object" && val !== null) {
+    const s = (val as Record<string, unknown>).status ?? (val as Record<string, unknown>).state;
+    return resolveStatus(s);
+  }
+  return "pending";
+}
 
 export default function OverviewPage() {
   const { dataLakeOk, modelsOk, nanoClawOk } = useApiHealth();
+  const [modelHealth, setModelHealth] = useState<Record<string, unknown>>({});
+
+  useEffect(() => {
+    modelApi.modelsHealth().then(setModelHealth).catch(() => {});
+  }, []);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
@@ -77,43 +90,12 @@ export default function OverviewPage() {
           }}
         >
           {MODELS.map((m) => (
-            <ModelCard key={m.key} name={m.name} status={m.status} />
+            <ModelCard
+              key={m.key}
+              name={m.name}
+              status={resolveStatus(modelHealth[m.key])}
+            />
           ))}
-        </div>
-      </section>
-
-      {/* Architecture */}
-      <section>
-        <SectionHeader title="Data Flow" />
-        <div
-          style={{
-            marginTop: "16px",
-            background: "var(--bg-surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-lg)",
-            padding: "24px",
-            fontFamily: "var(--font-mono)",
-            fontSize: "12px",
-            color: "var(--text-muted)",
-            lineHeight: 2,
-          }}
-        >
-          <FlowRow
-            nodes={["Sources (.xls / .csv)", "Ingestion pipeline", "Raw lake"]}
-          />
-          <FlowRow
-            nodes={["Raw lake", "Staged (Parquet)", "Curated (Parquet)"]}
-            indent
-          />
-          <FlowRow nodes={["Curated", "DuckDB SQL  ·  Neo4j Graph"]} indent />
-          <FlowRow
-            nodes={["DuckDB · Neo4j", "FastAPI :8000", "Dashboard :3000"]}
-            indent
-          />
-          <FlowRow
-            nodes={["FastAPI :8000", "Model Platform :8001", "NanoClaw"]}
-            indent
-          />
         </div>
       </section>
     </div>

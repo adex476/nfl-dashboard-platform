@@ -17,44 +17,8 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      // Data lake — root-level paths forwarded to production server
-      "/health": {
-        target: "https://nfl-dashboard.duckdns.org",
-        changeOrigin: true,
-        secure: true,
-      },
-      "/players": {
-        target: "https://nfl-dashboard.duckdns.org",
-        changeOrigin: true,
-        secure: true,
-      },
-      "/teams": {
-        target: "https://nfl-dashboard.duckdns.org",
-        changeOrigin: true,
-        secure: true,
-      },
-      "/query": {
-        target: "https://nfl-dashboard.duckdns.org",
-        changeOrigin: true,
-        secure: true,
-      },
-      "/graph": {
-        target: "https://nfl-dashboard.duckdns.org",
-        changeOrigin: true,
-        secure: true,
-      },
-      "/manage": {
-        target: "https://nfl-dashboard.duckdns.org",
-        changeOrigin: true,
-        secure: true,
-      },
-      // Model platform + NanoClaw
-      "/api/models": {
-        target: "https://nfl-dashboard.duckdns.org",
-        changeOrigin: true,
-        secure: true,
-      },
-      "/api/nanoclaw": {
+      // All API calls — data lake, models, nanoclaw
+      "/api": {
         target: "https://nfl-dashboard.duckdns.org",
         changeOrigin: true,
         secure: true,
