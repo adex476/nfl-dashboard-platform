@@ -1,18 +1,18 @@
 // ─── Data Lake types ──────────────────────────────────────────────────────────
 export interface Player {
   id: string;
-  name: string;
+  player_name: string;
   position: string;
-  college: string;
+  school: string | null;
   draft_year: number;
   draft_round: number;
   draft_pick: number;
   draft_team: string;
   ht_inches: number;
   wt: number;
-  forty: number | null;
-  bench: number | null;
-  vertical: number | null;
+  forty_yard: number | null;
+  bench_reps: number | null;
+  vertical_in: number | null;
   broad_jump: number | null;
   cone: number | null;
   shuttle: number | null;
@@ -71,4 +71,3 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
-export * from "./mockData";

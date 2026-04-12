@@ -43,7 +43,7 @@
       });
     }
 
-    players(position?: string, year?: number, limit = 10000): Promise<Player[]> {
+    players(position?: string, year?: number, limit = 10000): Promise<{ players: Player[] }> {
       const params = new URLSearchParams();
       if (position) params.set("position", position);
       if (year) params.set("year", String(year));
