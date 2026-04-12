@@ -15,7 +15,12 @@ function resolveStatus(val: unknown): "ready" | "pending" {
   if (!val) return "pending";
   if (typeof val === "string") return val === "ready" || val === "ok" ? "ready" : "pending";
   if (typeof val === "object" && val !== null) {
-    const s = (val as Record<string, unknown>).status ?? (val as Record<string, unknown>).state;
+    const obj = val as Record<string, unknown>;
+    // registry entry shape: {model_name, latest, loaded, ...}
+    if ("model_name" in obj) {
+      return obj.latest != null ? "ready" : "pending";
+    }
+    const s = obj.status ?? obj.state;
     return resolveStatus(s);
   }
   return "pending";
@@ -26,7 +31,15 @@ export default function OverviewPage() {
   const [modelHealth, setModelHealth] = useState<Record<string, unknown>>({});
 
   useEffect(() => {
-    modelApi.modelsHealth().then(setModelHealth).catch(() => {});
+    modelApi.modelsHealth().then((res) => {
+      const models: { model_name: string; [k: string]: unknown }[] =
+        Array.isArray((res as Record<string, unknown>).models)
+          ? ((res as Record<string, unknown>).models as { model_name: string; [k: string]: unknown }[])
+          : [];
+      const keyed: Record<string, unknown> = {};
+      for (const m of models) keyed[m.model_name] = m;
+      setModelHealth(keyed);
+    }).catch(() => {});
   }, []);
 
   return (

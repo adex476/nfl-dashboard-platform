@@ -16,8 +16,20 @@
       headers: { "Content-Type": "application/json" },
       ...init,
     });
-    if (!res.ok) throw new Error(`API error ${res.status}: ${await res.text()}`);
-    return res.json() as Promise<T>;
+
+    const text = await res.text();
+
+    if (!res.ok) {
+      throw new Error(`API error ${res.status}: ${text}`);
+    }
+
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      throw new Error(
+        `Expected JSON from ${baseUrl}${path}, got: ${text.slice(0, 200)}`,
+      );
+    }
   }
 
   // ─── Data Lake client ─────────────────────────────────────────────────────────
@@ -148,13 +160,13 @@
 
   // ─── Singleton instances ──────────────────────────────────────────────────────
   export const dataLake = new DataLakeClient(
-    import.meta.env.VITE_DATA_LAKE_URL || "/api",
+    import.meta.env.VITE_DATA_LAKE_URL?.trim() || "/api",
   );
 
   export const modelApi = new ModelClient(
-    import.meta.env.VITE_MODEL_API_URL || "/api/models",
+    import.meta.env.VITE_MODEL_API_URL?.trim() || "/api/models",
   );
 
   export const nanoClawApi = new NanoClawClient(
-    import.meta.env.VITE_NANOCLAW_URL || "/api/nanoclaw",
+    import.meta.env.VITE_NANOCLAW_URL?.trim() || "/api/nanoclaw",
   );
