@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { Player } from "@nfl/types";
 import { dataLake } from "@nfl/api-client";
 
@@ -35,39 +35,70 @@ const COLS: Array<{ key: keyof Player; label: string; mono?: boolean }> = [
   { key: "shuttle", label: "Shuttle", mono: true },
 ];
 
+const ROW_HEIGHT = 42;
+const OVERSCAN = 10;
+
+// Module-level cache — survives tab switches, cleared on page reload
+let playersCache: Player[] | null = null;
+
 export default function PlayersPage() {
-  const [players, setPlayers] = useState<Player[]>([]);
-  const [filtered, setFiltered] = useState<Player[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [players, setPlayers] = useState<Player[]>(playersCache ?? []);
+  const [filtered, setFiltered] = useState<Player[]>(playersCache ?? []);
+  const [loading, setLoading] = useState(playersCache === null);
   const [error, setError] = useState<string | null>(null);
   const [position, setPosition] = useState("All");
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<keyof Player>("draft_pick");
   const [sortAsc, setSortAsc] = useState(true);
 
-  // Load players
+  // Virtual scroll state
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrollTop, setScrollTop] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(600);
+
+  // Debounce ref
+  const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Fetch — skip if cache hit
   useEffect(() => {
+    if (playersCache !== null) return;
+
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
+
     dataLake
-      .players()
+      .players(undefined, undefined, 10000)
       .then((data) => {
-        setPlayers(data.players || []);
+        if (controller.signal.aborted) return;
+        const list = data.players || [];
+        playersCache = list;
+        setPlayers(list);
         setLoading(false);
       })
       .catch((e) => {
+        if (controller.signal.aborted) return;
         setError(String(e));
         setLoading(false);
       });
+
+    return () => controller.abort();
+  }, []);
+
+  // Debounce search input
+  const handleSearchChange = useCallback((val: string) => {
+    setSearch(val);
+    if (searchDebounce.current) clearTimeout(searchDebounce.current);
+    searchDebounce.current = setTimeout(() => setDebouncedSearch(val), 250);
   }, []);
 
   // Filter + sort
   useEffect(() => {
     let result = [...players];
-    if (position !== "All")
-      result = result.filter((p) => p.position === position);
-    if (search) {
-      const q = search.toLowerCase();
+    if (position !== "All") result = result.filter((p) => p.position === position);
+    if (debouncedSearch) {
+      const q = debouncedSearch.toLowerCase();
       result = result.filter(
         (p) =>
           p.player_name.toLowerCase().includes(q) ||
@@ -82,7 +113,46 @@ export default function PlayersPage() {
       return 0;
     });
     setFiltered(result);
-  }, [players, position, search, sortKey, sortAsc]);
+    // Reset scroll to top on filter/sort change
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    setScrollTop(0);
+  }, [players, position, debouncedSearch, sortKey, sortAsc]);
+
+  // Track container height via ResizeObserver
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setContainerHeight(entry.contentRect.height);
+    });
+    ro.observe(el);
+    setContainerHeight(el.clientHeight);
+    return () => ro.disconnect();
+  }, [loading]);
+
+  const handleScroll = useCallback(() => {
+    if (scrollRef.current) setScrollTop(scrollRef.current.scrollTop);
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    playersCache = null;
+    setPlayers([]);
+    setFiltered([]);
+    setLoading(true);
+    setError(null);
+    dataLake
+      .players(undefined, undefined, 10000)
+      .then((data) => {
+        const list = data.players || [];
+        playersCache = list;
+        setPlayers(list);
+        setLoading(false);
+      })
+      .catch((e) => {
+        setError(String(e));
+        setLoading(false);
+      });
+  }, []);
 
   const toggleSort = (key: keyof Player) => {
     if (sortKey === key) setSortAsc((v) => !v);
@@ -92,8 +162,17 @@ export default function PlayersPage() {
     }
   };
 
+  // Virtual window calculation
+  const totalHeight = filtered.length * ROW_HEIGHT;
+  const startIndex = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
+  const visibleCount = Math.ceil(containerHeight / ROW_HEIGHT) + OVERSCAN * 2;
+  const endIndex = Math.min(filtered.length, startIndex + visibleCount);
+  const visibleRows = filtered.slice(startIndex, endIndex);
+  const paddingTop = startIndex * ROW_HEIGHT;
+  const paddingBottom = Math.max(0, totalHeight - endIndex * ROW_HEIGHT);
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px", height: "100%" }}>
       {/* Header */}
       <div>
         <h1
@@ -122,7 +201,7 @@ export default function PlayersPage() {
       >
         <input
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => handleSearchChange(e.target.value)}
           placeholder="Search name or college…"
           style={inputStyle}
         />
@@ -134,8 +213,7 @@ export default function PlayersPage() {
               style={{
                 ...chipStyle,
                 color: position === p ? "var(--accent)" : "var(--text-muted)",
-                background:
-                  position === p ? "var(--accent-dim)" : "transparent",
+                background: position === p ? "var(--accent-dim)" : "transparent",
                 border:
                   position === p
                     ? "1px solid var(--accent)"
@@ -156,18 +234,49 @@ export default function PlayersPage() {
         >
           {filtered.length} results
         </span>
+        <button
+          onClick={handleRefresh}
+          title="Reload players from data lake"
+          style={{
+            ...chipStyle,
+            color: "var(--text-muted)",
+            background: "transparent",
+            border: "1px solid var(--border)",
+            cursor: "pointer",
+          }}
+        >
+          ↺ refresh
+        </button>
       </div>
 
       {/* Table */}
       {loading ? (
         <LoadingState />
       ) : error ? (
-        <ErrorState message={error} />
+        <ErrorState message={error} onRetry={handleRefresh} />
       ) : (
-        <div style={{ overflowX: "auto" }}>
+        // Single table — thead sticky so columns stay aligned with body on scroll
+        <div
+          ref={scrollRef}
+          onScroll={handleScroll}
+          style={{
+            overflowX: "auto",
+            overflowY: "auto",
+            height: "calc(100vh - 320px)",
+            flex: 1,
+          }}
+        >
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--border)" }}>
+              <tr
+                style={{
+                  borderBottom: "1px solid var(--border)",
+                  position: "sticky",
+                  top: 0,
+                  background: "var(--bg-base)",
+                  zIndex: 1,
+                }}
+              >
                 {COLS.map((col) => (
                   <th
                     key={col.key}
@@ -180,9 +289,7 @@ export default function PlayersPage() {
                       letterSpacing: "1px",
                       textTransform: "uppercase",
                       color:
-                        sortKey === col.key
-                          ? "var(--accent)"
-                          : "var(--text-faint)",
+                        sortKey === col.key ? "var(--accent)" : "var(--text-faint)",
                       cursor: "pointer",
                       userSelect: "none",
                       whiteSpace: "nowrap",
@@ -190,20 +297,26 @@ export default function PlayersPage() {
                   >
                     {col.label}
                     {sortKey === col.key && (
-                      <span style={{ marginLeft: "4px" }}>
-                        {sortAsc ? "↑" : "↓"}
-                      </span>
+                      <span style={{ marginLeft: "4px" }}>{sortAsc ? "↑" : "↓"}</span>
                     )}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((player, i) => (
+              {/* Top spacer */}
+              {paddingTop > 0 && (
+                <tr style={{ height: paddingTop }}>
+                  <td colSpan={COLS.length} />
+                </tr>
+              )}
+
+              {visibleRows.map((player, i) => (
                 <tr
-                  key={player.player_name ?? i}
+                  key={player.player_name ?? startIndex + i}
                   style={{
                     borderBottom: "1px solid var(--border)",
+                    height: ROW_HEIGHT,
                     transition: "background 0.1s",
                   }}
                   onMouseEnter={(e) =>
@@ -219,9 +332,7 @@ export default function PlayersPage() {
                       style={{
                         padding: "10px 12px",
                         fontSize: "13px",
-                        fontFamily: col.mono
-                          ? "var(--font-mono)"
-                          : "var(--font-body)",
+                        fontFamily: col.mono ? "var(--font-mono)" : "var(--font-body)",
                         color:
                           col.key === "player_name"
                             ? "var(--text-primary)"
@@ -229,8 +340,7 @@ export default function PlayersPage() {
                         whiteSpace: "nowrap",
                       }}
                     >
-                      {player[col.key] !== null &&
-                      player[col.key] !== undefined ? (
+                      {player[col.key] !== null && player[col.key] !== undefined ? (
                         String(player[col.key])
                       ) : (
                         <span style={{ color: "var(--text-faint)" }}>—</span>
@@ -239,6 +349,14 @@ export default function PlayersPage() {
                   ))}
                 </tr>
               ))}
+
+              {/* Bottom spacer */}
+              {paddingBottom > 0 && (
+                <tr style={{ height: paddingBottom }}>
+                  <td colSpan={COLS.length} />
+                </tr>
+              )}
+
               {filtered.length === 0 && (
                 <tr>
                   <td
@@ -310,7 +428,7 @@ function LoadingState() {
   );
 }
 
-function ErrorState({ message }: { message: string }) {
+function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div
       style={{
@@ -336,6 +454,22 @@ function ErrorState({ message }: { message: string }) {
       <p style={{ marginTop: "8px", color: "var(--text-faint)" }}>
         Make sure the data lake API is reachable at /api/health
       </p>
+      <button
+        onClick={onRetry}
+        style={{
+          marginTop: "16px",
+          padding: "8px 16px",
+          background: "transparent",
+          border: "1px solid var(--danger)",
+          borderRadius: "var(--radius)",
+          color: "var(--danger)",
+          fontFamily: "var(--font-mono)",
+          fontSize: "12px",
+          cursor: "pointer",
+        }}
+      >
+        retry
+      </button>
     </div>
   );
 }
