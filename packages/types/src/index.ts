@@ -63,6 +63,54 @@ export interface NanoClawResponse {
   }>;
 }
 
+// ─── Agent Platform (streaming) types ─────────────────────────────────────────
+
+export interface ConfirmedTool {
+  tool: string;
+  args: Record<string, unknown>;
+}
+
+export interface Visualization {
+  type: "bar" | "line" | "table" | "shap" | "graph";
+  title: string;
+  data: unknown;
+  config: unknown;
+}
+
+export interface AwaitingConfirmation {
+  tool: string;
+  args: Record<string, unknown>;
+}
+
+export type SSEEvent =
+  | { type: "text_delta"; content: string }
+  | { type: "tool_call"; name: string }
+  | { type: "tool_result"; name: string; status: "ok" | "error" }
+  | { type: "ui_action"; action: string; payload: Record<string, unknown> }
+  | {
+      type: "done";
+      message: NanoClawMessage;
+      visualizations: Visualization[];
+      tool_calls_made: string[];
+      awaiting_confirmation: AwaitingConfirmation | null;
+    }
+  | { type: "error"; content: string };
+
+export type DashboardView =
+  | "players"
+  | "teams"
+  | "compare"
+  | "draft"
+  | "projections"
+  | "home";
+
+export interface DashboardFilters {
+  season?: number;
+  team?: string;
+  position?: string;
+  week?: number;
+}
+
 // ─── API response wrappers ────────────────────────────────────────────────────
 export interface ApiResponse<T> {
   data: T;

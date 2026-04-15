@@ -5,6 +5,8 @@
     PredictionResult,
     NanoClawMessage,
     NanoClawResponse,
+    ConfirmedTool,
+    SSEEvent,
   } from "@nfl/types";
 
   async function apiFetch<T>(
@@ -135,15 +137,58 @@
     }
   }
 
-  // ─── NanoClaw client ──────────────────────────────────────────────────────────
+  // ─── NanoClaw / Agent Platform client ────────────────────────────────────────
   export class NanoClawClient {
     constructor(private base = "/api/nanoclaw") {}
 
+    /** Blocking chat — full response when done */
     chat(messages: NanoClawMessage[], sessionId: string): Promise<NanoClawResponse> {
       return apiFetch(this.base, "/chat", {
         method: "POST",
         body: JSON.stringify({ messages, session_id: sessionId }),
       });
+    }
+
+    /** Streaming SSE chat — yields events as they arrive */
+    async *chatStream(
+      sessionId: string,
+      messages: NanoClawMessage[],
+      confirmedTool?: ConfirmedTool | null,
+    ): AsyncGenerator<SSEEvent> {
+      const res = await fetch(`${this.base}/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          messages,
+          confirmed_tool: confirmedTool ?? null,
+        }),
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`API error ${res.status}: ${text}`);
+      }
+
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            yield JSON.parse(line.slice(6)) as SSEEvent;
+          } catch {
+            // skip malformed lines
+          }
+        }
+      }
     }
 
     tools(): Promise<Record<string, unknown>[]> {
