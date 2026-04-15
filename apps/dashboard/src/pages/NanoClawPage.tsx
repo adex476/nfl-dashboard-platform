@@ -25,13 +25,27 @@ const SUGGESTIONS = [
   "Compare two QBs from the 2025 class",
 ];
 
+// ─── Session cache (survives tab switches / component unmount) ────────────────
+
+interface SessionCache {
+  sessionId: string;
+  messages: NanoClawMessage[];
+  turns: (NanoClawMessage | AssistantTurn)[];
+}
+
+const sessionCache: SessionCache = {
+  sessionId: crypto.randomUUID(),
+  messages: [],
+  turns: [],
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function NanoClawPage() {
   const { dispatchAction } = useDashboard();
 
-  const [messages, setMessages] = useState<NanoClawMessage[]>([]);
-  const [turns, setTurns] = useState<(NanoClawMessage | AssistantTurn)[]>([]);
+  const [messages, setMessages] = useState<NanoClawMessage[]>(() => sessionCache.messages);
+  const [turns, setTurns] = useState<(NanoClawMessage | AssistantTurn)[]>(() => sessionCache.turns);
   const [input, setInput] = useState("");
   const [streamState, setStreamState] = useState<StreamState>("idle");
   const [activeBadges, setActiveBadges] = useState<ToolBadge[]>([]);
@@ -39,9 +53,18 @@ export default function NanoClawPage() {
   const [streamingText, setStreamingText] = useState("");
 
   const bottomRef = useRef<HTMLDivElement>(null);
-  const sessionId = useRef(crypto.randomUUID());
+  const sessionId = useRef(sessionCache.sessionId);
   // keep a ref to abort controller so we can cancel if needed
   const abortRef = useRef<AbortController | null>(null);
+
+  // Sync state back to cache so it survives unmount
+  useEffect(() => { sessionCache.messages = messages; }, [messages]);
+  useEffect(() => { sessionCache.turns = turns; }, [turns]);
+
+  // Abort any in-flight stream on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

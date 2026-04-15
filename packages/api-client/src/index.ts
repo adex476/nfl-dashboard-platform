@@ -120,7 +120,7 @@
     predict(req: PredictionRequest): Promise<PredictionResult> {
       return apiFetch(this.base, `/${toApiPath(req.model)}/predict`, {
         method: "POST",
-        body: JSON.stringify(req.inputs),
+        body: JSON.stringify({ inputs: req.inputs }),
       });
     }
 
