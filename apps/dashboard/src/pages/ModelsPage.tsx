@@ -326,7 +326,7 @@ interface PlayerProjectionResult {
   career_value_score: number;
   grade: string;
   confidence: number;
-  draft_context: { label: string; value: number; avg: number };
+  draft_context?: { label: string; value: number; avg: number } | null;
   comparables: Array<{
     name: string;
     position: string;
@@ -421,11 +421,11 @@ function PlayerProjectionResult({
               CONFIDENCE{" "}
               <span style={{ color: "#fff" }}>{result.confidence}%</span>
             </span>
-            <span>{result.draft_context.label}</span>
+            {result.draft_context && <span>{result.draft_context.label}</span>}
           </div>
         </Card>
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <Card>
+          {result.draft_context && <Card>
             <SectionLabel>Draft Slot Context</SectionLabel>
             {[
               {
@@ -486,7 +486,7 @@ function PlayerProjectionResult({
                 </div>
               </div>
             ))}
-          </Card>
+          </Card>}
           <Card style={{ flex: 1 }}>
             <SectionLabel>Comparable Players</SectionLabel>
             <div
@@ -648,7 +648,21 @@ function PlayerProjectionPanel() {
       const normalizedShap: Array<{ feature: string; contribution: number }> = Array.isArray(shap)
         ? shap
         : Object.entries(shap ?? {}).map(([feature, contribution]) => ({ feature, contribution: contribution as number }));
-      setResult({ ...raw, shap_values: normalizedShap } as PlayerProjectionResult);
+      const normalizedComparables = (raw.comparables ?? []).map((c: any) => ({
+        name: c.player_name ?? c.name ?? "Unknown",
+        position: c.position ?? "",
+        car_av: c.actual_car_av ?? c.car_av ?? 0,
+        draft_pick: c.draft_pick ?? c.draft_year ?? 0,
+      }));
+      const rawConf = raw.confidence ?? 0;
+      const normalizedConfidence = rawConf < 1 ? Math.round(rawConf * 100) : rawConf;
+      setResult({
+        ...raw,
+        shap_values: normalizedShap,
+        comparables: normalizedComparables,
+        confidence: normalizedConfidence,
+        draft_context: raw.draft_context ?? null,
+      } as PlayerProjectionResult);
     } catch (err) {
       setResult(null);
       setError(err instanceof Error ? err.message : "Unable to run projection.");
