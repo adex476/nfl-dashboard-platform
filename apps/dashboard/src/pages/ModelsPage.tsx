@@ -989,6 +989,9 @@ interface DraftOptimizerResult {
     need_match: number;
   }>;
   need_coverage: Array<{ position: string; need: number; filled: number }>;
+  board?: DraftOptimizerResult["picks"];
+  solver_status?: string;
+  meta?: { error?: string };
 }
 
 function mockOptimizerResult(
@@ -1047,7 +1050,7 @@ function DraftOptimizerResult({ result }: { result: DraftOptimizerResult }) {
             marginTop: "10px",
           }}
         >
-          {result.picks.map((p) => (
+          {(result.picks ?? []).map((p) => (
             <div
               key={p.name}
               style={{
@@ -1204,7 +1207,7 @@ function DraftOptimizerResult({ result }: { result: DraftOptimizerResult }) {
             marginTop: "10px",
           }}
         >
-          {result.need_coverage.map((n) => (
+          {(result.need_coverage ?? []).map((n) => (
             <div key={n.position}>
               <div
                 style={{
@@ -1286,6 +1289,7 @@ function DraftOptimizerResult({ result }: { result: DraftOptimizerResult }) {
 function DraftOptimizerPanel() {
   const [team, setTeam] = useState("DAL");
   const [pick, setPick] = useState("12");
+  const [draftYear, setDraftYear] = useState(String(new Date().getFullYear()));
   const [needs, setNeeds] = useState("WR,EDGE");
   const [result, setResult] = useState<DraftOptimizerResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1296,15 +1300,21 @@ function DraftOptimizerPanel() {
       .map((s) => s.trim().toUpperCase())
       .filter(Boolean);
     try {
-      const res = await modelApi.predict({
+      const raw = await modelApi.predict({
         model: "draft_optimizer",
         inputs: {
           team,
           pick_number: parseInt(pick) || 12,
           positional_needs: needsList,
+          draft_year: parseInt(draftYear) || new Date().getFullYear(),
         },
-      });
-      setResult(res as unknown as DraftOptimizerResult);
+      }) as unknown as DraftOptimizerResult;
+      const res: DraftOptimizerResult = {
+        ...raw,
+        picks: raw.picks ?? raw.board ?? [],
+        need_coverage: raw.need_coverage ?? [],
+      };
+      setResult(res);
     } catch {
       setResult(mockOptimizerResult(parseInt(pick) || 12, needsList));
     } finally {
@@ -1322,7 +1332,7 @@ function DraftOptimizerPanel() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 2fr",
+          gridTemplateColumns: "1fr 1fr 1fr 2fr",
           gap: "14px",
         }}
       >
@@ -1337,6 +1347,13 @@ function DraftOptimizerPanel() {
           value={pick}
           onChange={setPick}
           placeholder="12"
+          type="number"
+        />
+        <InputField
+          label="Draft Year"
+          value={draftYear}
+          onChange={setDraftYear}
+          placeholder="2025"
           type="number"
         />
         <InputField
@@ -2305,6 +2322,7 @@ function RosterFitPanel() {
   const [name, setName] = useState("");
   const [pos, setPos] = useState("WR");
   const [team, setTeam] = useState("SF");
+  const [year, setYear] = useState("2024");
   const [result, setResult] = useState<RosterFitResult | null>(null);
   const [loading, setLoading] = useState(false);
   const run = async () => {
@@ -2312,7 +2330,7 @@ function RosterFitPanel() {
     try {
       const res = await modelApi.predict({
         model: "roster_fit",
-        inputs: { name, position: pos, team },
+        inputs: { name, position: pos, team, year: parseInt(year) || undefined },
       });
       setResult(res as unknown as RosterFitResult);
     } catch {
@@ -2332,7 +2350,7 @@ function RosterFitPanel() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
+          gridTemplateColumns: "1fr 1fr 1fr 1fr",
           gap: "14px",
         }}
       >
@@ -2365,6 +2383,13 @@ function RosterFitPanel() {
           value={team}
           onChange={setTeam}
           placeholder="SF"
+        />
+        <InputField
+          label="Year"
+          value={year}
+          onChange={setYear}
+          placeholder="2024"
+          type="number"
         />
       </div>
       <RunButton onClick={run} loading={loading} />
@@ -2832,7 +2857,7 @@ function TeamDiagnosisPanel() {
         model: "team_diagnosis",
         inputs: {
           team: team.toUpperCase() || "DAL",
-          year: parseInt(year) || 2024,
+          year: parseInt(year) || undefined,
         },
       });
       setResult(res as unknown as TeamDiagnosisResult);
