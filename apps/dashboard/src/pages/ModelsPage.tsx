@@ -621,9 +621,7 @@ function PlayerProjectionResult({
 
 function PlayerProjectionPanel() {
   const [name, setName] = useState("");
-  const [pos, setPos] = useState("WR");
-  const [round, setRound] = useState("1");
-  const [pick, setPick] = useState("2");
+  const [draftYear, setDraftYear] = useState(String(new Date().getFullYear()));
   const [result, setResult] = useState<PlayerProjectionResult | null>(null);
   const [loading, setLoading] = useState(false);
   const run = async () => {
@@ -633,16 +631,12 @@ function PlayerProjectionPanel() {
         model: "player_projection",
         inputs: {
           player_name: name,
-          position: pos,
-          draft_round: parseInt(round) || 1,
-          draft_pick: parseInt(pick) || 2,
+          draft_year: parseInt(draftYear) || new Date().getFullYear(),
         },
       });
       setResult(res as unknown as PlayerProjectionResult);
     } catch {
-      setResult(
-        mockProjectionResult(parseInt(pick) || 2, parseInt(round) || 1),
-      );
+      setResult(mockProjectionResult(1, 1));
     } finally {
       setLoading(false);
     }
@@ -658,7 +652,7 @@ function PlayerProjectionPanel() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr 1fr",
+          gridTemplateColumns: "1fr 1fr",
           gap: "14px",
         }}
       >
@@ -668,35 +662,11 @@ function PlayerProjectionPanel() {
           onChange={setName}
           placeholder="e.g. Travis Hunter"
         />
-        <SelectField
-          label="Position"
-          value={pos}
-          onChange={setPos}
-          options={[
-            "QB",
-            "WR",
-            "RB",
-            "TE",
-            "OT",
-            "IOL",
-            "EDGE",
-            "DT",
-            "LB",
-            "CB",
-            "S",
-          ]}
-        />
-        <SelectField
-          label="Draft Round"
-          value={round}
-          onChange={setRound}
-          options={["1", "2", "3", "4", "5", "6", "7"]}
-        />
         <InputField
-          label="Draft Pick #"
-          value={pick}
-          onChange={setPick}
-          placeholder="2"
+          label="Draft Year"
+          value={draftYear}
+          onChange={setDraftYear}
+          placeholder={String(new Date().getFullYear())}
           type="number"
         />
       </div>
@@ -1843,7 +1813,7 @@ function PositionalFlexPanel() {
       });
       setResult(res as unknown as FlexResult);
     } catch {
-      setResult(mockFlexResult(pos, parseFloat(snapShare) || 0.62));
+      setResult(mockFlexResult("WR", 0.62));
     } finally {
       setLoading(false);
     }
