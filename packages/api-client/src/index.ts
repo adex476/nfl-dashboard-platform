@@ -97,7 +97,7 @@
       return apiFetch(this.base, "/teams");
     }
 
-    teamStats(team: string, yearStart?: number, yearEnd?: number): Promise<TeamStats[]> {
+    teamStats(team: string, yearStart?: number, yearEnd?: number): Promise<{ team: string; seasons: TeamStats[] } | TeamStats[]> {
       const params = new URLSearchParams();
       if (yearStart) params.set("year_start", String(yearStart));
       if (yearEnd) params.set("year_end", String(yearEnd));

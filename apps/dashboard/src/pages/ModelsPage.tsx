@@ -643,7 +643,12 @@ function PlayerProjectionPanel() {
           draft_year: parseInt(draftYear) || new Date().getFullYear(),
         },
       });
-      setResult(res as unknown as PlayerProjectionResult);
+      const raw = res as any;
+      const shap = raw.shap_values;
+      const normalizedShap: Array<{ feature: string; contribution: number }> = Array.isArray(shap)
+        ? shap
+        : Object.entries(shap ?? {}).map(([feature, contribution]) => ({ feature, contribution: contribution as number }));
+      setResult({ ...raw, shap_values: normalizedShap } as PlayerProjectionResult);
     } catch (err) {
       setResult(null);
       setError(err instanceof Error ? err.message : "Unable to run projection.");
@@ -1104,6 +1109,7 @@ interface DraftOptimizerResult {
     need_match: number;
   }>;
   need_coverage: Array<{ position: string; need: number; filled: number }>;
+  need_weights?: Record<string, number>;
   board?: DraftOptimizerResult["picks"];
   solver_status?: string;
   meta?: { error?: string };
@@ -1424,10 +1430,26 @@ function DraftOptimizerPanel() {
           draft_year: parseInt(draftYear) || new Date().getFullYear(),
         },
       }) as unknown as DraftOptimizerResult;
+      const boardItems: any[] = raw.picks ?? raw.board ?? [];
+      const normalizedPicks = boardItems.map((p: any, i: number) => ({
+        rank: p.rank ?? i + 1,
+        name: p.name ?? p.player_name ?? "Unknown",
+        position: p.position ?? "",
+        projected_av: p.projected_av ?? p.career_value_score ?? 0,
+        adp_value: p.adp_value ?? p.composite_score ?? 0,
+        value_over_adp: p.value_over_adp ?? 0,
+        need_match: p.need_match ?? p.need_weight ?? 0,
+      }));
+      const needWeights: Record<string, number> = raw.need_weights ?? {};
+      const normalizedNeedCoverage = raw.need_coverage ?? Object.entries(needWeights).map(([position, need]) => ({
+        position,
+        need: need as number,
+        filled: normalizedPicks.filter((p) => p.position === position).length,
+      }));
       const res: DraftOptimizerResult = {
         ...raw,
-        picks: raw.picks ?? raw.board ?? [],
-        need_coverage: raw.need_coverage ?? [],
+        picks: normalizedPicks,
+        need_coverage: normalizedNeedCoverage,
       };
       setResult(res);
     } catch {
@@ -3084,8 +3106,9 @@ function TeamDiagnosisPanel() {
     setError(null);
     setLoading(true);
     try {
-      const teamStats = await dataLake.teamStats(normalizedTeam, season, season);
-      const teamStatsDf = teamStats.map((row) => ({
+      const teamStatsRaw = await dataLake.teamStats(normalizedTeam, season, season);
+      const teamStats = Array.isArray(teamStatsRaw) ? teamStatsRaw : (teamStatsRaw as any).seasons ?? [];
+      const teamStatsDf = teamStats.map((row: Record<string, unknown>) => ({
         ...row,
         season: row.year,
       }));
