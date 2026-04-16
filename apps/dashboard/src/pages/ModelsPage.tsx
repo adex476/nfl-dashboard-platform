@@ -632,7 +632,7 @@ function PlayerProjectionPanel() {
       const res = await modelApi.predict({
         model: "player_projection",
         inputs: {
-          name,
+          player_name: name,
           position: pos,
           draft_round: parseInt(round) || 1,
           draft_pick: parseInt(pick) || 2,
@@ -1828,9 +1828,7 @@ function PositionalFlexResult({ result }: { result: FlexResult }) {
 
 function PositionalFlexPanel() {
   const [name, setName] = useState("");
-  const [pos, setPos] = useState("WR");
-  const [snapShare, setSnapShare] = useState("0.62");
-  const [seasons, setSeasons] = useState("3");
+  const [draftYear, setDraftYear] = useState("2024");
   const [result, setResult] = useState<FlexResult | null>(null);
   const [loading, setLoading] = useState(false);
   const run = async () => {
@@ -1839,10 +1837,8 @@ function PositionalFlexPanel() {
       const res = await modelApi.predict({
         model: "positional_flexibility",
         inputs: {
-          name,
-          position: pos,
-          snap_share: parseFloat(snapShare) || 0.62,
-          seasons_played: parseInt(seasons) || 3,
+          player_name: name,
+          draft_year: parseInt(draftYear) || 2024,
         },
       });
       setResult(res as unknown as FlexResult);
@@ -1863,7 +1859,7 @@ function PositionalFlexPanel() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr 1fr",
+          gridTemplateColumns: "1fr 1fr",
           gap: "14px",
         }}
       >
@@ -1873,36 +1869,11 @@ function PositionalFlexPanel() {
           onChange={setName}
           placeholder="e.g. Taysom Hill"
         />
-        <SelectField
-          label="Primary Position"
-          value={pos}
-          onChange={setPos}
-          options={[
-            "QB",
-            "WR",
-            "RB",
-            "TE",
-            "OT",
-            "IOL",
-            "EDGE",
-            "DT",
-            "LB",
-            "CB",
-            "S",
-          ]}
-        />
         <InputField
-          label="Snap Share (0–1)"
-          value={snapShare}
-          onChange={setSnapShare}
-          placeholder="0.62"
-          type="number"
-        />
-        <InputField
-          label="Seasons in System"
-          value={seasons}
-          onChange={setSeasons}
-          placeholder="3"
+          label="Draft Year"
+          value={draftYear}
+          onChange={setDraftYear}
+          placeholder="2024"
           type="number"
         />
       </div>
