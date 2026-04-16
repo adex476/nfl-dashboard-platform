@@ -118,9 +118,13 @@
     constructor(private base = "/api/models") {}
 
     predict(req: PredictionRequest): Promise<PredictionResult> {
+      const payload =
+        req.inputs && typeof req.inputs === "object" && !Array.isArray(req.inputs)
+          ? { ...req.inputs, inputs: req.inputs }
+          : { inputs: req.inputs };
       return apiFetch(this.base, `/${toApiPath(req.model)}/predict`, {
         method: "POST",
-        body: JSON.stringify({ inputs: req.inputs }),
+        body: JSON.stringify(payload),
       });
     }
 

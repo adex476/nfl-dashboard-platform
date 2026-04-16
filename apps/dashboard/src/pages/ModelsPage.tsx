@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { modelApi } from "@nfl/api-client";
+import { dataLake, modelApi } from "@nfl/api-client";
 import {
   RadarChart,
   PolarGrid,
@@ -623,20 +623,30 @@ function PlayerProjectionPanel() {
   const [name, setName] = useState("");
   const [draftYear, setDraftYear] = useState(String(new Date().getFullYear()));
   const [result, setResult] = useState<PlayerProjectionResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const run = async () => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setError("Enter a player name before running the projection.");
+      setResult(null);
+      return;
+    }
+
+    setError(null);
     setLoading(true);
     try {
       const res = await modelApi.predict({
         model: "player_projection",
         inputs: {
-          player_name: name,
+          player_name: trimmedName,
           draft_year: parseInt(draftYear) || new Date().getFullYear(),
         },
       });
       setResult(res as unknown as PlayerProjectionResult);
-    } catch {
-      setResult(mockProjectionResult(1, 1));
+    } catch (err) {
+      setResult(null);
+      setError(err instanceof Error ? err.message : "Unable to run projection.");
     } finally {
       setLoading(false);
     }
@@ -659,7 +669,10 @@ function PlayerProjectionPanel() {
         <InputField
           label="Player Name"
           value={name}
-          onChange={setName}
+          onChange={(value) => {
+            setName(value);
+            if (error) setError(null);
+          }}
           placeholder="e.g. Travis Hunter"
         />
         <InputField
@@ -670,6 +683,17 @@ function PlayerProjectionPanel() {
           type="number"
         />
       </div>
+      {error && (
+        <div
+          style={{
+            color: T.danger,
+            fontFamily: T.body,
+            fontSize: "14px",
+          }}
+        >
+          {error}
+        </div>
+      )}
       <RunButton onClick={run} loading={loading} />
       {result && <PlayerProjectionResult result={result} />}
     </div>
@@ -685,6 +709,79 @@ interface HealthAnalyzerResult {
   survival_curve: Array<{ season: number; probability: number }>;
   seasonal_risk: Array<{ season: string; injury_pct: number }>;
   key_factors: Array<{ factor: string; impact: string }>;
+  expected_games_played?: number;
+  season_injury_probability?: number;
+  position_group?: string;
+  position_percentile?: number;
+}
+
+interface HealthAnalyzerApiResult {
+  risk_tier?: string;
+  injury_risk_tier?: string;
+  survival_curve?: number[];
+  seasonal_risk?: Array<{ season: string; injury_pct: number }>;
+  key_factors?: Array<{ factor: string; impact: string }>;
+  primary_risk_factors?: string[];
+  expected_games_played?: number;
+  season_injury_probability?: number;
+  position_group?: string;
+  position_percentile?: number;
+}
+
+function normalizeHealthResult(data: HealthAnalyzerApiResult): HealthAnalyzerResult {
+  const tier = data.risk_tier ?? data.injury_risk_tier ?? "Low";
+  const injuryProbability = Math.max(
+    0,
+    Math.min(1, data.season_injury_probability ?? 0),
+  );
+  const survivalCurve =
+    Array.isArray(data.survival_curve) && data.survival_curve.length > 0
+      ? data.survival_curve.map((probability, index) => ({
+          season: index + 1,
+          probability: Math.round(
+            Math.max(0, Math.min(1, probability)) * 1000,
+          ) / 10,
+        }))
+      : [];
+
+  const seasonalRisk =
+    Array.isArray(data.seasonal_risk) && data.seasonal_risk.length > 0
+      ? data.seasonal_risk
+      : survivalCurve.map((entry, index) => ({
+          season: `Yr ${index + 1}`,
+          injury_pct: Math.round(
+            Math.min(
+              99,
+              (injuryProbability + index * 0.025) * 100,
+            ) * 10,
+          ) / 10,
+        }));
+
+  const keyFactors =
+    Array.isArray(data.key_factors) && data.key_factors.length > 0
+      ? data.key_factors
+      : Array.isArray(data.primary_risk_factors) && data.primary_risk_factors.length > 0
+        ? data.primary_risk_factors.map((factor) => ({
+            factor,
+            impact: "Risk factor",
+          }))
+        : [
+            {
+              factor: "No primary risk factors flagged",
+              impact: "Stable profile",
+            },
+          ];
+
+  return {
+    risk_tier: tier,
+    survival_curve: survivalCurve,
+    seasonal_risk: seasonalRisk,
+    key_factors: keyFactors,
+    expected_games_played: data.expected_games_played,
+    season_injury_probability: data.season_injury_probability,
+    position_group: data.position_group,
+    position_percentile: data.position_percentile,
+  };
 }
 
 function mockHealthResult(
@@ -774,6 +871,17 @@ function HealthAnalyzerResult({ result }: { result: HealthAnalyzerResult }) {
             alignItems: "flex-end",
           }}
         >
+          {typeof result.expected_games_played === "number" && (
+            <div
+              style={{
+                fontFamily: T.mono,
+                fontSize: "11px",
+                color: T.muted,
+              }}
+            >
+              EXPECTED GAMES: {result.expected_games_played.toFixed(2)}
+            </div>
+          )}
           {result.key_factors.map((f) => (
             <div
               key={f.factor}
@@ -788,9 +896,16 @@ function HealthAnalyzerResult({ result }: { result: HealthAnalyzerResult }) {
                 style={{
                   fontFamily: T.mono,
                   fontSize: "10px",
-                  color: f.impact.includes("↑") ? T.danger : T.success,
+                  color:
+                    f.impact.includes("↑") || /risk/i.test(f.impact)
+                      ? T.danger
+                      : T.success,
                   padding: "2px 6px",
-                  border: `1px solid ${f.impact.includes("↑") ? T.danger : T.success}`,
+                  border: `1px solid ${
+                    f.impact.includes("↑") || /risk/i.test(f.impact)
+                      ? T.danger
+                      : T.success
+                  }`,
                   borderRadius: "4px",
                 }}
               >
@@ -905,7 +1020,7 @@ function HealthAnalyzerPanel() {
           snaps_per_game: parseInt(snaps) || 52,
         },
       });
-      setResult(res as unknown as HealthAnalyzerResult);
+      setResult(normalizeHealthResult(res as HealthAnalyzerApiResult));
     } catch {
       setResult(
         mockHealthResult(parseInt(injuries) || 1, parseInt(snaps) || 52),
@@ -1387,6 +1502,109 @@ interface FlexResult {
   comparables: Array<{ name: string; positions: string[]; note: string }>;
 }
 
+interface FlexApiPositionScore {
+  affinity_score: number;
+  percentile: number;
+  viable_backup: boolean;
+  package_player: boolean;
+}
+
+interface FlexApiComparable {
+  distance: number;
+  player_name: string;
+  draft_year: number;
+  primary_group: string;
+  label_QB: number;
+  label_SKILL: number;
+  label_OL: number;
+  label_DL: number;
+  label_LB: number;
+  label_DB: number;
+  label_SPEC: number;
+}
+
+interface FlexApiResult {
+  primary_group?: string;
+  position_scores?: Record<string, FlexApiPositionScore>;
+  flex_candidates?: string[];
+  comparables?: FlexApiComparable[];
+}
+
+function normalizeFlexResult(data: FlexApiResult): FlexResult {
+  const positionScores = data.position_scores ?? {};
+  const primary = data.primary_group ?? "SKILL";
+  const primaryScore = positionScores[primary];
+  const secondaryPositions = Object.entries(positionScores)
+    .filter(([group]) => group !== primary)
+    .map(([group, score]) => ({
+      position: group,
+      role: score.package_player
+        ? "Package player"
+        : score.viable_backup
+          ? "Viable backup"
+          : "Developmental fit",
+      probability: Math.round(score.percentile),
+    }))
+    .sort((a, b) => b.probability - a.probability);
+
+  const personnelUsage = Object.entries(positionScores)
+    .map(([group, score]) => ({
+      package: group,
+      snap_pct: Math.round(score.percentile),
+    }))
+    .sort((a, b) => b.snap_pct - a.snap_pct);
+
+  const shapValues = Object.entries(positionScores)
+    .map(([group, score]) => ({
+      feature: `${group} affinity`,
+      contribution: Math.round((score.affinity_score * 100 - 20) * 10) / 10,
+    }))
+    .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution));
+
+  const comparables = (data.comparables ?? []).map((player) => {
+    const labels = [
+      "QB",
+      "SKILL",
+      "OL",
+      "DL",
+      "LB",
+      "DB",
+      "SPEC",
+    ].filter((group) => {
+      const key = `label_${group}` as keyof FlexApiComparable;
+      const value = player[key];
+      return typeof value === "number" && value > 0;
+    });
+
+    return {
+      name: player.player_name,
+      positions: labels.length > 0 ? labels : [player.primary_group],
+      note: `${player.primary_group} · ${player.draft_year} · dist ${player.distance.toFixed(2)}`,
+    };
+  });
+
+  const topScore = primaryScore?.percentile ?? 0;
+  const versatilityScore = Math.round(topScore);
+  const tier =
+    versatilityScore >= 85
+      ? "Elite Flex"
+      : versatilityScore >= 65
+        ? "Multi-Position"
+        : versatilityScore >= 45
+          ? "Limited Flex"
+          : "One-Trick";
+
+  return {
+    versatility_tier: tier,
+    versatility_score: versatilityScore,
+    primary_position: primary,
+    secondary_positions: secondaryPositions,
+    personnel_usage: personnelUsage,
+    shap_values: shapValues,
+    comparables,
+  };
+}
+
 function mockFlexResult(pos: string, snapShare: number): FlexResult {
   const skillPos = ["WR", "RB", "TE", "CB", "S", "LB"];
   const isSkill = skillPos.includes(pos);
@@ -1828,7 +2046,7 @@ function PositionalFlexPanel() {
           draft_year: parseInt(draftYear) || 2024,
         },
       });
-      setResult(res as unknown as FlexResult);
+      setResult(normalizeFlexResult(res as FlexApiResult));
     } catch {
       setResult(mockFlexResult("WR", 0.62));
     } finally {
@@ -2326,15 +2544,23 @@ function RosterFitPanel() {
   const [result, setResult] = useState<RosterFitResult | null>(null);
   const [loading, setLoading] = useState(false);
   const run = async () => {
+    const season = parseInt(year) || 2024;
+    const normalizedTeam = team.trim().toUpperCase() || "SF";
+
     setLoading(true);
     try {
       const res = await modelApi.predict({
         model: "roster_fit",
-        inputs: { name, position: pos, team, year: parseInt(year) || undefined },
+        inputs: {
+          name: name.trim(),
+          position: pos,
+          team: normalizedTeam,
+          season,
+        },
       });
       setResult(res as unknown as RosterFitResult);
     } catch {
-      setResult(mockRosterFitResult(pos, team));
+      setResult(mockRosterFitResult(pos, normalizedTeam));
     } finally {
       setLoading(false);
     }
@@ -2849,25 +3075,37 @@ function TeamDiagnosisPanel() {
   const [team, setTeam] = useState("DAL");
   const [year, setYear] = useState("2024");
   const [result, setResult] = useState<TeamDiagnosisResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const run = async () => {
+    const normalizedTeam = team.trim().toUpperCase() || "DAL";
+    const season = parseInt(year) || 2024;
+
+    setError(null);
     setLoading(true);
     try {
+      const teamStats = await dataLake.teamStats(normalizedTeam, season, season);
+      const teamStatsDf = teamStats.map((row) => ({
+        ...row,
+        season: row.year,
+      }));
+
+      if (teamStatsDf.length === 0) {
+        throw new Error(`No team stats found for ${normalizedTeam} in ${season}.`);
+      }
+
       const res = await modelApi.predict({
         model: "team_diagnosis",
         inputs: {
-          team: team.toUpperCase() || "DAL",
-          year: parseInt(year) || undefined,
+          team: normalizedTeam,
+          season,
+          team_stats_df: teamStatsDf,
         },
       });
       setResult(res as unknown as TeamDiagnosisResult);
-    } catch {
-      setResult(
-        mockTeamDiagnosisResult(
-          team.toUpperCase() || "DAL",
-          parseInt(year) || 2024,
-        ),
-      );
+    } catch (err) {
+      setResult(null);
+      setError(err instanceof Error ? err.message : "Unable to run diagnosis.");
     } finally {
       setLoading(false);
     }
@@ -2886,17 +3124,34 @@ function TeamDiagnosisPanel() {
         <InputField
           label="Team Abbreviation"
           value={team}
-          onChange={setTeam}
+          onChange={(value) => {
+            setTeam(value);
+            if (error) setError(null);
+          }}
           placeholder="DAL"
         />
         <InputField
           label="Season"
           value={year}
-          onChange={setYear}
+          onChange={(value) => {
+            setYear(value);
+            if (error) setError(null);
+          }}
           placeholder="2024"
           type="number"
         />
       </div>
+      {error && (
+        <div
+          style={{
+            color: T.danger,
+            fontFamily: T.body,
+            fontSize: "14px",
+          }}
+        >
+          {error}
+        </div>
+      )}
       <RunButton onClick={run} loading={loading} label="RUN DIAGNOSIS" />
       {result && <TeamDiagnosisResultPanel result={result} />}
     </div>
